@@ -12,6 +12,33 @@ pub type G2 = <ark_ec::models::bn::Bn<ark_bn254::Parameters> as ark_ec::PairingE
 
 pub mod unipoly;
 pub mod kzg10; // TODO: mock implementation of KZG10
+pub mod mle;
+
+pub fn log_2(n: usize) -> usize {
+    assert_ne!(n, 0);
+
+    if n.is_power_of_two() {
+      (1usize.leading_zeros() - n.leading_zeros()) as usize
+    } else {
+      (0usize.leading_zeros() - n.leading_zeros()) as usize
+    }
+}
+
+pub fn pow_2(n: usize) -> usize {
+    assert_ne!(n, 0);
+    let p = (2 as u32).pow(n as u32);
+    p as usize
+}
+
+pub fn bits(i: usize, num_bits: usize) -> Vec<bool> {
+    (0..num_bits)
+      .map(|shift_amount| ((i & (1 << (num_bits - shift_amount - 1))) > 0))
+      .collect::<Vec<bool>>()
+}
+
+pub fn scalar_from_bits(i: usize, num_bits: usize) -> Vec<Scalar> {
+    bits(i, num_bits).iter().map(| &b | if b {Scalar::one()} else {Scalar::zero()}).collect()
+}
 
 pub fn scalar_modulus_half() -> Scalar{
     let mut b = FrParameters::MODULUS;
@@ -22,7 +49,7 @@ pub fn scalar_modulus_half() -> Scalar{
 pub trait ScalarExt: Sized + Copy + Zero + One + Eq + std::fmt::Debug {
     fn from_u64(i: u64) -> Self;
 
-    fn one() -> Self;
+    // fn one() -> Self;
     fn two() -> Self;
 
     fn from_usize(v: usize) -> Self;
@@ -40,9 +67,9 @@ impl ScalarExt for Scalar {
         Scalar::from(i as u64)
     }
 
-    fn one() -> Self {
-        Scalar::from(1 as u64)
-    }
+    // fn one() -> Self {
+    //     Scalar::from(1 as u64)
+    // }
 
     fn two() -> Self {
         Scalar::from(2 as u64)

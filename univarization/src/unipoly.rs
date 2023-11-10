@@ -66,7 +66,7 @@ impl UniPolynomial {
             degree: degree,
             domain_size: domain_size,
             evals: evals,
-            coeffs: coeffs.to_vec(),
+            coeffs: normalized_coeffs.to_vec(),
         }
     }
 
@@ -179,6 +179,10 @@ impl UniPolynomial {
                 });
         acc
     }
+
+    pub fn evaluate(&self, x: &Scalar) -> Scalar {
+        Self::evaluate_from_coeffs(&self.coeffs, x)
+    }
 }
 
 mod tests {
@@ -267,6 +271,21 @@ mod tests {
         assert_eq!(f.evals[7], Scalar::from(50));
         assert_eq!(f.evals[6], Scalar::from(37));
         assert_eq!(f.evals[0], Scalar::from(1));
+
+        // let rng = &mut ark_std::test_rng();
+        // let x = Scalar::rand(rng);
+    }
+
+    #[test]
+    fn test_new_from_coeffs_again() {
+        // f(X) = X^2 + 1
+        let domain_size = 8;
+        let coeffs: Vec<Scalar> = Scalar::from_usize_vector(&[2, 0, 1]);
+        let f = UniPolynomial::from_coeffs(&coeffs, 8);
+
+        assert_eq!(f.degree, 2);
+        println!("f.evals={}", scalar_vector_to_string(&f.evals));
+        println!("f.coeffs={}", scalar_vector_to_string(&f.coeffs));
 
         // let rng = &mut ark_std::test_rng();
         // let x = Scalar::rand(rng);
