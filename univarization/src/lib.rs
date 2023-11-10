@@ -13,6 +13,7 @@ pub type G2 = <ark_ec::models::bn::Bn<ark_bn254::Parameters> as ark_ec::PairingE
 pub mod unipoly;
 pub mod kzg10; // TODO: mock implementation of KZG10
 pub mod mle;
+pub mod gemini;
 
 pub fn log_2(n: usize) -> usize {
     assert_ne!(n, 0);

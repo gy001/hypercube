@@ -114,6 +114,47 @@ impl MLEPolynomial {
         (0..self.evals.len()).map(| i | chi_vec[i] * self.evals[i]).sum()
     }
 
+    // Interpolate the evaluations into coefficients in O(n * log(n))
+    pub fn compute_coeffs(&self) -> Vec<Scalar> {
+        let mut coeffs = self.evals.clone();
+        assert!(coeffs.len().is_power_of_two());
+
+        let len = coeffs.len();
+        let mut half = len / 2;
+        for _i in 0..self.num_var {
+            let b = coeffs.len() / half;
+            for j in (0..b).step_by(2) {
+                for k in 0..half {
+                    let a = coeffs[j*half + k];
+                    coeffs[(j+1)*half + k] -= a;
+                }
+            }
+            half = half / 2;
+        };
+        coeffs
+    }
+
+    // Evaluate the polynomial at r with coefficients in O(n)
+    // TODO: add check for the length of rs.
+    pub fn evaluate_from_coeffs(coeffs: &[Scalar], rs: &[Scalar]) -> Scalar {
+        assert!(coeffs.len().is_power_of_two());
+
+        let mut evals = coeffs.to_vec();
+        let mut rs = rs.to_vec();
+        let num_rounds = log_2(evals.len());
+        let mut half = evals.len();
+
+        for _i in 0..num_rounds {
+            half =  half / 2;
+            let r = rs.pop().unwrap();
+            for j in 0..half {
+                evals[j] = evals[j*2] + r * evals[j*2+1];
+            }
+            evals.truncate(half);
+        }
+        evals[0]
+    }
+
 }
 
 impl Index<usize> for MLEPolynomial {
@@ -160,5 +201,40 @@ mod tests {
         assert_eq!(mle.len(), 8);
         assert_eq!(mle.num_var, 3);
         assert_eq!(mle.evals, Scalar::from_usize_vector(&[1,2,3,4,5,0,0,0]));
+    }
+    
+    #[test]
+    fn test_mle_evaluate() {
+        let vs = Scalar::from_usize_vector(&[1,2,3,4]);
+        let mle = MLEPolynomial::new(&vs);
+
+        let rs = Scalar::from_usize_vector(&[0,1]);
+        let result = mle.evaluate(&rs);
+        assert_eq!(result, Scalar::from(2));
+
+        let rs = Scalar::from_usize_vector(&[1,1]);
+        let result = mle.evaluate(&rs);
+        assert_eq!(result, Scalar::from(4));
+    }
+
+    #[test]
+    fn test_compute_coeffs() {
+        // f(x1, x0) = 1 + x0 + 2x1
+        // f(0, 1)  = 2
+        // f(1, 0)  = 3
+        // f(1, 1)  = 4
+        // coeffs = [1, 0, 2, 0]
+        let vs = Scalar::from_usize_vector(&[1,2,3,4]);
+        let mle = MLEPolynomial::new(&vs);
+
+        let coeffs = mle.compute_coeffs();
+        println!("coeffs={}", scalar_vector_to_string(&coeffs));
+        let rs = Scalar::from_usize_vector(&[0,1]);
+        let result = MLEPolynomial::evaluate_from_coeffs(&coeffs, &rs);
+        assert_eq!(result, Scalar::from(2));
+
+        let rs = Scalar::from_usize_vector(&[1,1]);
+        let result = MLEPolynomial::evaluate_from_coeffs(&coeffs, &rs);
+        assert_eq!(result, Scalar::from(4));
     }
 }
