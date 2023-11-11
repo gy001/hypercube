@@ -1,4 +1,6 @@
 use core::ops::Index;
+use core::fmt::Display;
+use core::fmt;
 
 use crate::*;
 
@@ -72,6 +74,21 @@ pub struct MLEPolynomial {
     pub evals: Vec<Scalar>, // Hello, hypercube!
 }
 
+impl Display for MLEPolynomial {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let terms: Vec<String> = self
+            .evals
+            .iter()
+            .enumerate()
+            .map(|(i, term)| {
+                format!("\n{}:{}", i, ScalarExt::to_string(term))
+            })
+            .collect();
+
+        write!(f, "Polynomial.evals[{}]", terms.join(","))
+    }
+}
+
 impl MLEPolynomial {
     pub fn new(vs: &[Scalar]) -> Self {
         let vs_len = vs.len();
@@ -103,6 +120,7 @@ impl MLEPolynomial {
                 + *rho * self.evals[i + half];
         }
         self.num_var -= 1;
+        self.evals.truncate(half);
     }
 
     pub fn evaluate(&self, rs: &[Scalar]) -> Scalar {

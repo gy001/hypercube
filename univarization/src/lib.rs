@@ -2,7 +2,7 @@ use ark_bn254::Fr;
 use ark_bn254::FrParameters;
 use ark_std::{vec::Vec, One, Zero, UniformRand};
 // use ark_std::rand::Rng;
-use ark_ff::{PrimeField, FftParameters, FpParameters, BigInteger, BigInteger256, ToBytes};
+use ark_ff::{Field, PrimeField, FftField, FftParameters, FpParameters, BigInteger, BigInteger256, ToBytes};
 
 use ark_std::rand::Rng;
 
@@ -142,4 +142,19 @@ mod tests {
             println!("a>=b");
         }
     }
+
+
+    #[test]
+    fn test_omega() {
+        let g = Scalar::multiplicative_generator();
+        let order = -Scalar::one();
+        println!("g={}", ScalarExt::to_string(&g));
+        let cofactor = order / Scalar::from((2 as u64).pow(3));
+        let omega = order.pow(cofactor.into_repr());
+        println!("omega={}", ScalarExt::to_string(&omega));
+        let omega_pow_8 = omega.pow(&[8,0,0,0]);
+        println!("omega_pow_8={}", ScalarExt::to_string(&omega_pow_8));
+
+    }
+
 }

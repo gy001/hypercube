@@ -44,7 +44,7 @@ impl SumcheckSystem {
         let mut half = poly.len() / 2;
 
         for _rd in 0..rounds {
-
+            println!("rd={}, poly={}", _rd, poly);
             let mut eval_at_0 = Scalar::zero();
             let mut eval_at_1 = Scalar::zero();
 
@@ -62,15 +62,20 @@ impl SumcheckSystem {
             trans.update_with_scalar(&eval_at_0);
             trans.update_with_scalar(&eval_at_1);
 
-            let r = trans.generate_challenge();
+            // TODO: temporarily debugging
+            let r = Scalar::from_usize(_rd + 1);
+            // let r = trans.generate_challenge();
             r_vec.push(r);
-
+            println!("r={}", r);
+            
             poly.fold_into_half(&r);
             half /= 2;
 
             let g_poly = UniPolynomial::from_evals(&[eval_at_0, eval_at_1], 2);
             // reduce the sum
             e = g_poly.evaluate(&r);
+            println!("g={}", scalar_vector_to_string(&g_poly.evals));
+            println!("g[{}]={}", ScalarExt::to_string(&r), ScalarExt::to_string(&e));
             ipoly_vec.push(g_poly);
         }
 
@@ -105,7 +110,11 @@ impl SumcheckSystem {
                 "sumcheck [{}] failed at round {}", &prf.name, _rd);
 
             trans.update_with_scalar_vec(ipoly.evals.as_slice());
-            let r = trans.generate_challenge();
+
+            // TODO: temporarily debugging
+            let r = Scalar::from_usize(_rd + 1);
+            // let r = trans.generate_challenge();
+
             println!("r[{}]={}", _rd, r);
 
             let eval_at_r = ipoly.evaluate(&r);
@@ -273,6 +282,25 @@ mod tests {
         let num_rounds = f.num_var;
         let sum = vs.iter().sum::<Scalar>();
 
+        let (r_vec, re, prf) = SumcheckSystem::prove_single("test", &sum, &f, &mut tr.clone());
+
+        println!("r_vec={}", scalar_vector_to_string(&r_vec));
+        println!("reduced_sum={}", ScalarExt::to_string(&re));
+
+        let (re_prime, r_vec_prime) = SumcheckSystem::verify_single(&sum, num_rounds, &prf, &mut tr.clone());
+        assert_eq!(re, re_prime);
+    }
+
+    #[test]
+    fn test_sumcheck_single_prove_verify_len_8() {
+ 
+        let vs = Scalar::from_usize_vector(&[1,2,3,4,4,3,2,1]);
+        let f = MLEPolynomial::new(&vs);
+        let mut tr = Transcript::new_with_name(b"test");
+
+        let num_rounds = f.num_var;
+        let sum = vs.iter().sum::<Scalar>();
+        println!("sum={}", sum);
         let (r_vec, re, prf) = SumcheckSystem::prove_single("test", &sum, &f, &mut tr.clone());
 
         println!("r_vec={}", scalar_vector_to_string(&r_vec));
