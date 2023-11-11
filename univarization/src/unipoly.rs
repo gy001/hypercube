@@ -20,8 +20,10 @@ pub struct UniPolynomial {
 
 impl UniPolynomial {
 
-    pub fn from_evals(evals: &[Scalar]) -> Self {
-        assert!(evals.len().is_power_of_two());
+    // NOTE: the domain_size parameter is important for the G(f0, f1, ..., fn) function
+    //    domain_size = degree_bound + 1
+    pub fn from_evals(evals: &[Scalar], domain_size: usize) -> Self {
+        assert_eq!(evals.len(), domain_size);
         let mut coeffs = UniPolynomial::lagrange_interpolation(evals);
         let degree: usize = {
             let mut deg = evals.len() - 1;
@@ -37,7 +39,7 @@ impl UniPolynomial {
 
         UniPolynomial {
             degree: degree,
-            domain_size: evals.len(),
+            domain_size: domain_size,
             evals: evals.to_vec(),
             coeffs: coeffs,
         }
@@ -253,7 +255,7 @@ mod tests {
         // f(X) = X + 1
         let domain_size = 8;
         let evals: Vec<Scalar> = Scalar::from_usize_vector(&[1, 2, 3, 4, 5, 6, 7, 8]);
-        let f = UniPolynomial::from_evals(&evals);
+        let f = UniPolynomial::from_evals(&evals, 8);
 
         assert_eq!(f.degree, 1);
         assert_eq!(f.coeffs[7], Scalar::from(1));

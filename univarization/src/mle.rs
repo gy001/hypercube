@@ -66,6 +66,7 @@ impl EqPolynomial {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct MLEPolynomial {
     pub num_var: usize,
     pub evals: Vec<Scalar>, // Hello, hypercube!
