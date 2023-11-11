@@ -31,6 +31,16 @@ pub fn init_logger() {
         .try_init();
 }
 
+// Initialize the logger
+pub fn init_logger() {
+    let env = Env::default()
+        .filter_or("RUST_LOG", "info"); // Set the default log level here
+
+    env_logger::Builder::from_env(env)
+        .format_timestamp(None) // Customize the log format if needed
+        .try_init();
+}
+
 pub fn log_2(n: usize) -> usize {
     assert_ne!(n, 0);
 
