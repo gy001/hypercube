@@ -274,40 +274,28 @@ mod tests {
 
     #[test]
     fn test_sumcheck_single_prove_verify() {
+
+        let rng = &mut ark_std::test_rng();
+        let vector_size = [2,4,8,16,32,64,128,256,512,1024];
+
+        for i in 0..vector_size.len() {
+            let vs = Scalar::rand_vector(vector_size[i], rng);
  
-        let vs = Scalar::from_usize_vector(&[1,2,3,4]);
-        let f = MLEPolynomial::new(&vs);
-        let mut tr = Transcript::new_with_name(b"test");
+            // let vs = Scalar::from_usize_vector(&[1,2,3,4]);
+            let f = MLEPolynomial::new(&vs);
+            let mut tr = Transcript::new_with_name(b"test");
 
-        let num_rounds = f.num_var;
-        let sum = vs.iter().sum::<Scalar>();
+            let num_rounds = f.num_var;
+            let sum = vs.iter().sum::<Scalar>();
 
-        let (r_vec, re, prf) = SumcheckSystem::prove_single("test", &sum, &f, &mut tr.clone());
+            let (r_vec, re, prf) = SumcheckSystem::prove_single("test", &sum, &f, &mut tr.clone());
 
-        println!("r_vec={}", scalar_vector_to_string(&r_vec));
-        println!("reduced_sum={}", ScalarExt::to_string(&re));
+            println!("r_vec={}", scalar_vector_to_string(&r_vec));
+            println!("reduced_sum={}", ScalarExt::to_string(&re));
 
-        let (re_prime, r_vec_prime) = SumcheckSystem::verify_single(&sum, num_rounds, &prf, &mut tr.clone());
-        assert_eq!(re, re_prime);
-    }
-
-    #[test]
-    fn test_sumcheck_single_prove_verify_len_8() {
- 
-        let vs = Scalar::from_usize_vector(&[1,2,3,4,4,3,2,1]);
-        let f = MLEPolynomial::new(&vs);
-        let mut tr = Transcript::new_with_name(b"test");
-
-        let num_rounds = f.num_var;
-        let sum = vs.iter().sum::<Scalar>();
-        println!("sum={}", sum);
-        let (r_vec, re, prf) = SumcheckSystem::prove_single("test", &sum, &f, &mut tr.clone());
-
-        println!("r_vec={}", scalar_vector_to_string(&r_vec));
-        println!("reduced_sum={}", ScalarExt::to_string(&re));
-
-        let (re_prime, r_vec_prime) = SumcheckSystem::verify_single(&sum, num_rounds, &prf, &mut tr.clone());
-        assert_eq!(re, re_prime);
+            let (re_prime, r_vec_prime) = SumcheckSystem::verify_single(&sum, num_rounds, &prf, &mut tr.clone());
+            assert_eq!(re, re_prime);
+        }
     }
 
     #[test]
