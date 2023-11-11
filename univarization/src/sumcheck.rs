@@ -244,6 +244,8 @@ impl SumcheckSystem {
 
         assert_eq!(num_rounds, ipoly_vec.len());
 
+        println!("Num rounds: {}", num_rounds);
+
         for _rd in 0..num_rounds {
             let ipoly = &ipoly_vec[_rd];
 
@@ -309,37 +311,43 @@ mod tests {
     #[test]
     fn test_sumcheck_cubic_prove_verify() {
 
-        let f0_vec = Scalar::from_usize_vector(&[1,2,3,4]);
-        let f1_vec = Scalar::from_usize_vector(&[2,1,2,1]);
-        let f2_vec = Scalar::from_usize_vector(&[3,2,2,3]);
-        let f0 = MLEPolynomial::new(&f0_vec);
-        let f1 = MLEPolynomial::new(&f1_vec);
-        let f2 = MLEPolynomial::new(&f2_vec);
+        let rng = &mut ark_std::test_rng();
+        let vector_size = [4];
 
-        let mut tr = Transcript::new_with_name(b"test");
+        for i in 0..vector_size.len() {
 
-        let G_func = |vs: Vec<Scalar>, size: usize| {
-            vs[0] * vs[1] * vs[2]
-        };
+            let f0_vec = Scalar::rand_vector(vector_size[i], rng);
+            let f1_vec = Scalar::rand_vector(vector_size[i], rng);
+            let f2_vec = Scalar::rand_vector(vector_size[i], rng);
+            let f0 = MLEPolynomial::new(&f0_vec);
+            let f1 = MLEPolynomial::new(&f1_vec);
+            let f2 = MLEPolynomial::new(&f2_vec);
 
-        let num_rounds = f0.num_var;
-        let sum = f0_vec.iter().enumerate().map(
-            |(i, v0)| *v0 * f1_vec[i] * f2_vec[i]).sum::<Scalar>();
+            let mut tr = Transcript::new_with_name(b"test");
 
-        println!("sum={}", sum);
+            let G_func = |vs: Vec<Scalar>, size: usize| {
+                vs[0] * vs[1] * vs[2]
+            };
+
+            let num_rounds = f0.num_var;
+            let sum = f0_vec.iter().enumerate().map(
+                |(i, v0)| *v0 * f1_vec[i] * f2_vec[i]).sum::<Scalar>();
+
+            println!("sum={}", sum);
 
         let (r_vec, re, prf) = SumcheckSystem::prove_cubic("test", &sum,
             &[f0.clone(), f1.clone(), f2.clone()], &G_func, 3, &mut tr.clone());
 
-        println!("r_vec={}", scalar_vector_to_string(&r_vec));
-        println!("reduced_sum={}", ScalarExt::to_string(&re));
+            println!("r_vec={}", scalar_vector_to_string(&r_vec));
+            println!("reduced_sum={}", ScalarExt::to_string(&re));
 
-        let (re_prime, r_vec_prime) = SumcheckSystem::verify(&sum, num_rounds, 3, &prf, &mut tr.clone());
-        assert_eq!(re, re_prime);
-        assert_eq!(r_vec, r_vec_prime);
+            let (re_prime, r_vec_prime) = SumcheckSystem::verify(&sum, num_rounds, 3, &prf, &mut tr.clone());
+            assert_eq!(re, re_prime);
+            assert_eq!(r_vec, r_vec_prime);
 
-        // final verification
-        assert_eq!(re, G_func(vec![f0.evaluate(&r_vec), f1.evaluate(&r_vec), f2.evaluate(&r_vec)], 3));
+            // final verification
+            assert_eq!(re, G_func(vec![f0.evaluate(&r_vec), f1.evaluate(&r_vec), f2.evaluate(&r_vec)], 3));
+        }
     }
 
 
