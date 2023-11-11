@@ -2,7 +2,7 @@ use ark_bn254::Fr;
 use ark_bn254::FrParameters;
 use ark_std::{vec::Vec, One, Zero, UniformRand};
 // use ark_std::rand::Rng;
-use ark_ff::{PrimeField, FftParameters, FpParameters, BigInteger, BigInteger256};
+use ark_ff::{PrimeField, FftParameters, FpParameters, BigInteger, BigInteger256, ToBytes};
 
 use ark_std::rand::Rng;
 
@@ -14,6 +14,8 @@ pub mod unipoly;
 pub mod kzg10; // TODO: mock implementation of KZG10
 pub mod mle;
 pub mod gemini;
+pub mod sumcheck;
+pub mod transcript;
 
 pub fn log_2(n: usize) -> usize {
     assert_ne!(n, 0);
@@ -61,6 +63,7 @@ pub trait ScalarExt: Sized + Copy + Zero + One + Eq + std::fmt::Debug {
 
     fn to_string(&self) -> String;
 
+    fn to_bytes(&self) -> Vec<u8>;
 }
 
 impl ScalarExt for Scalar {
@@ -99,6 +102,13 @@ impl ScalarExt for Scalar {
         }
         str
     }   
+
+    fn to_bytes(&self) -> Vec<u8> {
+        let mut value = [0u8; 32];
+        let _ = self.into_repr().to_bytes_be().write(value.as_mut());
+        value.to_vec()
+    }
+
 }
 
 pub fn scalar_vector_to_string(v_vec: &Vec<Scalar>) -> String {
