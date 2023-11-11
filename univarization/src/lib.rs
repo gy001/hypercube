@@ -1,3 +1,6 @@
+use core::fmt::Display;
+use core::fmt;
+
 use ark_bn254::Fr;
 use ark_bn254::FrParameters;
 use ark_std::{vec::Vec, One, Zero, UniformRand};
@@ -16,6 +19,7 @@ pub mod mle;
 pub mod gemini;
 pub mod sumcheck;
 pub mod transcript;
+pub mod unisumcheck;
 
 pub fn log_2(n: usize) -> usize {
     assert_ne!(n, 0);
@@ -33,10 +37,24 @@ pub fn pow_2(n: usize) -> usize {
     p as usize
 }
 
+// NOTE: 6 = (1, 1, 0), big-endian
 pub fn bits(i: usize, num_bits: usize) -> Vec<bool> {
     (0..num_bits)
       .map(|shift_amount| ((i & (1 << (num_bits - shift_amount - 1))) > 0))
       .collect::<Vec<bool>>()
+}
+
+// NOTE: (1, 1, 0) = 6, big-endian
+pub fn bits_to_integer(bits: Vec<bool>) -> usize {
+    let bits: Vec<usize> = bits.iter().map(|b| if *b {1} else {0}).collect();
+    bits.into_iter().fold(0, |acc, b| acc * 2 + b)
+}
+
+pub fn bit_reverse(i: usize, k_log: usize) -> usize {
+    let mut i_bits = bits(i, k_log);
+    i_bits.reverse();
+    let i_reversed = bits_to_integer(i_bits);
+    i_reversed
 }
 
 pub fn scalar_from_bits(i: usize, num_bits: usize) -> Vec<Scalar> {
@@ -49,7 +67,15 @@ pub fn scalar_modulus_half() -> Scalar{
     Scalar::from(b)
 }
 
-pub trait ScalarExt: Sized + Copy + Zero + One + Eq + std::fmt::Debug {
+pub fn scalar_modulus() -> BigInteger256 {
+    FrParameters::MODULUS
+}
+
+// impl Display for ScalarExt {
+
+// }
+
+pub trait ScalarExt: Sized + Copy + Zero + One + Eq + std::fmt::Debug + Display {
     fn from_u64(i: u64) -> Self;
 
     // fn one() -> Self;
@@ -64,6 +90,13 @@ pub trait ScalarExt: Sized + Copy + Zero + One + Eq + std::fmt::Debug {
     fn to_string(&self) -> String;
 
     fn to_bytes(&self) -> Vec<u8>;
+
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let str = ScalarExt::to_string(self);
+        write!(f, "{}", str)
+    }
+
+    fn exp(&self, exp: usize) -> Self;
 }
 
 impl ScalarExt for Scalar {
@@ -109,6 +142,12 @@ impl ScalarExt for Scalar {
         value.to_vec()
     }
 
+    fn exp(&self, exp: usize) -> Self {
+        let mut res = Scalar::one();
+        let mut base = self.clone();
+        assert_eq!(exp, (exp as u64) as usize);
+        self.pow(&[exp as u64, 0, 0, 0])
+    }
 }
 
 pub fn scalar_vector_to_string(v_vec: &Vec<Scalar>) -> String {
@@ -154,7 +193,23 @@ mod tests {
         println!("omega={}", ScalarExt::to_string(&omega));
         let omega_pow_8 = omega.pow(&[8,0,0,0]);
         println!("omega_pow_8={}", ScalarExt::to_string(&omega_pow_8));
+    }
+
+    #[test]
+    fn test_polynomial_fft() {
+        let evals: Vec<Scalar> = Scalar::from_usize_vector(&[1, 2, 3, 4, 5, 6, 7, 8]);
 
     }
 
+    #[test]
+    fn test_bits_to_integer() {
+        let bs = bits(6, 3);
+        assert_eq!(bits_to_integer(bs), 6);
+    }
+
+    #[test]
+    fn test_bit_reverse() {
+        let i_bits = bit_reverse(6, 3);
+        assert_eq!(i_bits, 3);
+    }
 }
