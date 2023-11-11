@@ -312,7 +312,7 @@ mod tests {
         init_logger();
 
         let rng = &mut ark_std::test_rng();
-        let vector_size = [4];
+        let vector_size = [2,4,8,16,32,64,128,256,512,1024];
 
         for i in 0..vector_size.len() {
 
