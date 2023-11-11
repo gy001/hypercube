@@ -4,6 +4,7 @@ use crate::*;
 use crate::mle::{MLEPolynomial, EqPolynomial};
 use crate::unipoly::UniPolynomial;
 use crate::kzg10::{KZG10PCS, Commitment};
+use log::debug;
 
 pub struct TensorProductSystem {
     kzg10: KZG10PCS,
@@ -51,12 +52,12 @@ impl TensorProductSystem {
             let f_cm = self.kzg10.commit(&unipoly);
             let coeffs_e: Vec<Scalar> = coeffs.iter().step_by(2).cloned().collect();
             let coeffs_o: Vec<Scalar> = coeffs.iter().skip(1).step_by(2).cloned().collect();
-            println!("rd={}, coeffs_e={}", i, scalar_vector_to_string(&coeffs_e));
-            println!("rd={}, coeffs_o={}", i, scalar_vector_to_string(&coeffs_o));
+            debug!("rd={}, coeffs_e={}", i, scalar_vector_to_string(&coeffs_e));
+            debug!("rd={}, coeffs_o={}", i, scalar_vector_to_string(&coeffs_o));
 
             coeffs = coeffs_e.iter().zip(coeffs_o.iter())
                 .map(| (&e, &o) | e + xs[i] * o).collect();
-            println!("rd={}, coeffs_next={}", i, scalar_vector_to_string(&coeffs));
+            debug!("rd={}, coeffs_next={}", i, scalar_vector_to_string(&coeffs));
             domain_size /= 2;
             unipoly_cm_vec.push(f_cm);
             unipoly_vec.push(unipoly);
@@ -80,13 +81,13 @@ impl TensorProductSystem {
             f_eval_pos_vec.push(f_eval_pos);
             let f_eval_neg = f_poly.evaluate(&(-beta));
             f_eval_neg_vec.push(f_eval_neg);
-            println!("rd={}, f_eval_pos={}", i, ScalarExt::to_string(&f_eval_pos));
-            println!("rd={}, f_eval_neg={}", i, ScalarExt::to_string(&f_eval_neg));
+            debug!("rd={}, f_eval_pos={}", i, ScalarExt::to_string(&f_eval_pos));
+            debug!("rd={}, f_eval_neg={}", i, ScalarExt::to_string(&f_eval_neg));
 
             if i != 0 {
                 let f_eval_sq = f_poly.evaluate(&(beta * beta));
                 f_eval_sq_vec.push(f_eval_sq);
-                println!("rd={}, f_eval_sq={}", i, ScalarExt::to_string(&f_eval_sq));
+                debug!("rd={}, f_eval_sq={}", i, ScalarExt::to_string(&f_eval_sq));
             }
         }
         f_eval_sq_vec.push(e);
@@ -110,8 +111,8 @@ impl TensorProductSystem {
         for i in 0..num_rounds {
             let rho = rho_vec.pop().unwrap();
             let rhs = ((arg.evals_pos[i] + arg.evals_neg[i]) / Scalar::from(2)) + rho * (arg.evals_pos[i] - arg.evals_neg[i]) / (Scalar::from(2) * beta);
-            println!("rd={}, rhs={}", i, ScalarExt::to_string(&rhs));
-            println!("rd={}, sq={}", i, ScalarExt::to_string(&arg.evals_sq[i]));
+            debug!("rd={}, rhs={}", i, ScalarExt::to_string(&rhs));
+            debug!("rd={}, sq={}", i, ScalarExt::to_string(&arg.evals_sq[i]));
             assert_eq!(arg.evals_sq[i], rhs);
         }
         // let coeffs = &commitment.values;
@@ -127,6 +128,7 @@ mod tests {
 
     #[test]
     fn test_prove_verify() {
+        init_logger();
 
         // f(X2, X1, X0) = 1 + X0 + 2*X1 + 0*X0X1 + 4*X2
         let f_vs = Scalar::from_usize_vector(&[1,2,3,4,5,6,7,8]);
@@ -136,7 +138,7 @@ mod tests {
         let kzg10 = KZG10PCS::setup(128);
 
         let f_coeffs = f_mle.compute_coeffs();
-        println!("f_coeffs={}", scalar_vector_to_string(&f_coeffs));
+        debug!("f_coeffs={}", scalar_vector_to_string(&f_coeffs));
 
         let f_uni = {
             let mut f_coeffs = f_coeffs.clone();
@@ -149,7 +151,7 @@ mod tests {
         let tensor_product_sys = TensorProductSystem::setup();
 
         let (e, arg) = tensor_product_sys.prove(&f_mle, &rs);
-        println!("e={}", ScalarExt::to_string(&e));
+        debug!("e={}", ScalarExt::to_string(&e));
 
         let b = tensor_product_sys.verify(&f_cm, &arg, &rs, &e);
         assert!(b);
