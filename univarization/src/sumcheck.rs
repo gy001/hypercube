@@ -63,11 +63,11 @@ impl SumcheckSystem {
             trans.update_with_scalar(&eval_at_1);
 
             // TODO: temporarily debugging
-            let r = Scalar::from_usize(_rd + 1);
-            // let r = trans.generate_challenge();
+            // let r = Scalar::from_usize(_rd + 1);
+            let r = trans.generate_challenge();
             r_vec.push(r);
             println!("r={}", r);
-            
+
             poly.fold_into_half(&r);
             half /= 2;
 
@@ -112,8 +112,9 @@ impl SumcheckSystem {
             trans.update_with_scalar_vec(ipoly.evals.as_slice());
 
             // TODO: temporarily debugging
-            let r = Scalar::from_usize(_rd + 1);
-            // let r = trans.generate_challenge();
+            // let r = Scalar::from_usize(_rd + 1);
+            let r = trans.generate_challenge();
+            r_vec.push(r);
 
             println!("r[{}]={}", _rd, r);
 
@@ -257,6 +258,8 @@ impl SumcheckSystem {
 
             trans.update_with_scalar_vec(ipoly.evals.as_slice());
             let r = trans.generate_challenge();
+
+            r_vec.push(r);
             println!("r[{}]={}", _rd, r);
 
             let eval_at_r = ipoly.evaluate(&r);
@@ -308,6 +311,9 @@ mod tests {
 
         let (re_prime, r_vec_prime) = SumcheckSystem::verify_single(&sum, num_rounds, &prf, &mut tr.clone());
         assert_eq!(re, re_prime);
+        assert_eq!(r_vec, r_vec_prime);
+        // final verification
+        assert_eq!(re, f.evaluate(&r_vec));
     }
 
     #[test]
@@ -332,13 +338,18 @@ mod tests {
 
         println!("sum={}", sum);
 
-        let (r_vec, re, prf) = SumcheckSystem::prove_cubic("test", &sum, &[f0, f1, f2], &G_func, 3, &mut tr.clone());
+        let (r_vec, re, prf) = SumcheckSystem::prove_cubic("test", &sum,
+            &[f0.clone(), f1.clone(), f2.clone()], &G_func, 3, &mut tr.clone());
 
         println!("r_vec={}", scalar_vector_to_string(&r_vec));
         println!("reduced_sum={}", ScalarExt::to_string(&re));
 
         let (re_prime, r_vec_prime) = SumcheckSystem::verify(&sum, num_rounds, 3, &prf, &mut tr.clone());
         assert_eq!(re, re_prime);
+        assert_eq!(r_vec, r_vec_prime);
+
+        // final verification
+        assert_eq!(re, G_func(vec![f0.evaluate(&r_vec), f1.evaluate(&r_vec), f2.evaluate(&r_vec)], 3));
     }
 
 
