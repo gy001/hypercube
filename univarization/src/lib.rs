@@ -20,7 +20,6 @@ pub mod mle;
 pub mod gemini;
 pub mod sumcheck;
 pub mod transcript;
-pub mod unisumcheck;
 
 // Initialize the logger
 pub fn init_logger() {

@@ -595,8 +595,8 @@ mod tests {
         println!("quotient={}", scalar_vector_to_string(&quotient));
         println!("remainder={}", scalar_vector_to_string(&remainder));
 
-        // assert_eq!(quotient, vec![Scalar::from(2), Scalar::from(1)]);
-        // assert_eq!(remainder, vec![Scalar::from(1)]);
+        assert_eq!(quotient, vec![Scalar::from(3), Scalar::from(0), Scalar::from(1)]);
+        assert_eq!(remainder, vec![Scalar::from(-1)]);
     }
 
     #[test]
@@ -607,7 +607,7 @@ mod tests {
         println!("quotient={}", scalar_vector_to_string(&quotient));
         println!("remainder={}", scalar_vector_to_string(&remainder));
         
-        // assert_eq!(quotient, vec![Scalar::from(2), Scalar::from(1)]);
-        // assert_eq!(remainder, vec![Scalar::from(1)]);
+        assert_eq!(quotient, vec![Scalar::from(-1), Scalar::from(1)]);
+        assert_eq!(remainder, vec![Scalar::from(4)]);
     }
 }
