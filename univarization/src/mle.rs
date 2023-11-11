@@ -1,6 +1,7 @@
 use core::ops::Index;
 use core::fmt::Display;
 use core::fmt;
+use log::debug;
 
 use crate::*;
 
@@ -190,22 +191,28 @@ mod tests {
 
     #[test]
     fn test_eq_new() {
+        init_logger();
+        
         let vs = Scalar::from_usize_vector(&[1,2,3]);
         let eq = EqPolynomial::new(&vs);
     }
 
     #[test]
     fn test_eq_evals_over_hypercube() {
+        init_logger();
+
         let vs = Scalar::from_usize_vector(&[1,2,3]);
         let eq = EqPolynomial::new(&vs);
         let evals = eq.evals_over_hypercube();
         let evals_prime = eq.evals_over_hypercube_slow();
         assert_eq!(evals, evals_prime);
-        println!("evals={}", scalar_vector_to_string(&evals));
+        debug!("evals={}", scalar_vector_to_string(&evals));
     }
 
     #[test]
     fn test_mle_new() {
+        init_logger();
+
         let vs = Scalar::from_usize_vector(&[1,2,3,4]);
         let mle = MLEPolynomial::new(&vs);
         assert_eq!(mle.len(), 4);
@@ -215,6 +222,8 @@ mod tests {
 
     #[test]
     fn test_mle_new_again() {
+        init_logger();
+
         let vs = Scalar::from_usize_vector(&[1,2,3,4,5]);
         let mle = MLEPolynomial::new(&vs);
         assert_eq!(mle.len(), 8);
@@ -224,6 +233,8 @@ mod tests {
     
     #[test]
     fn test_mle_evaluate() {
+        init_logger();
+
         let vs = Scalar::from_usize_vector(&[1,2,3,4]);
         let mle = MLEPolynomial::new(&vs);
 
@@ -238,6 +249,8 @@ mod tests {
 
     #[test]
     fn test_compute_coeffs() {
+        init_logger();
+
         // f(x1, x0) = 1 + x0 + 2x1
         // f(0, 1)  = 2
         // f(1, 0)  = 3
@@ -247,7 +260,7 @@ mod tests {
         let mle = MLEPolynomial::new(&vs);
 
         let coeffs = mle.compute_coeffs();
-        println!("coeffs={}", scalar_vector_to_string(&coeffs));
+        debug!("coeffs={}", scalar_vector_to_string(&coeffs));
         let rs = Scalar::from_usize_vector(&[0,1]);
         let result = MLEPolynomial::evaluate_from_coeffs(&coeffs, &rs);
         assert_eq!(result, Scalar::from(2));

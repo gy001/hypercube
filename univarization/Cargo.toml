@@ -14,5 +14,5 @@ ark-bn254 = { version = "0.3.0" }
 merlin = { version = "3.0", default-features = false }
 sha3 = { version = "0.10", default-features = false }
 
-log = {version = "0.4" }
-env_logger = {version = "0.10" }
+log = { version = "0.4" }
+env_logger = { version = "0.10" }

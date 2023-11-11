@@ -6,8 +6,9 @@ use ark_bn254::FrParameters;
 use ark_std::{vec::Vec, One, Zero, UniformRand};
 // use ark_std::rand::Rng;
 use ark_ff::{Field, PrimeField, FftField, FftParameters, FpParameters, BigInteger, BigInteger256, ToBytes};
-
 use ark_std::rand::Rng;
+
+use env_logger::Env;
 
 pub type Scalar = Fr;
 pub type G1 = <ark_ec::models::bn::Bn<ark_bn254::Parameters> as ark_ec::PairingEngine>::G1Affine;
@@ -20,6 +21,16 @@ pub mod gemini;
 pub mod sumcheck;
 pub mod transcript;
 pub mod unisumcheck;
+
+// Initialize the logger
+pub fn init_logger() {
+    let env = Env::default()
+        .filter_or("RUST_LOG", "info"); // Set the default log level here
+
+    env_logger::Builder::from_env(env)
+        .format_timestamp(None) // Customize the log format if needed
+        .try_init();
+}
 
 pub fn log_2(n: usize) -> usize {
     assert_ne!(n, 0);
