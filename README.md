@@ -6,6 +6,12 @@ This is a project as part of ZK Hack Istanbul 2023. zk-SNARKS has always been a 
 
 The goal is to implement cryptographic primitives to reduce sumcheck-based zk-SNARKS proving system into a univariate polynomial eventually. We call it "Hello, Hypercube!" because a multilinear polynomial can be represented as points on a Boolean hypercube and reduced through evaluations on it partial sum (using sumcheck).
 
+Such reduction can be used in:
+- Sumcheck-based zk-SNARKS
+- Nova-like folding schemes
+- Lasso/Jolt zkVM systems
+- GKR-based protocols
+
 ### Overview
 
 ![Overview](./img/univarization.png)
@@ -50,10 +56,16 @@ The main files showcasing our work are as follows (in the `univarization/src` fo
 - `gemini.rs`: implementation of the Gemini univarization technique as mentioned above
 - `ph.rs`: implementation of the LogUp+ technique as mentioned above
 - `fftunipoly.rs`: FFT functions needed on polynomial commitments
+- `snark.rs`: implementation of a Spartan like proving system
+
+We use ark_bn254, ark_std, ark_ff and ark_poly in our implementations.
 
 ### Future Work
 
-ZeroMorph is not implemented yet due to time constraint. Some of the polynomial constructions are not fully optimized yet. We look to benchmark the three approaches in the future. Adding zero knowledge construction will also be an interesting direction.
+- ZeroMorph is not implemented yet due to time constraint. 
+- Some of the polynomial constructions are not fully optimized yet. 
+- We look to benchmark the three approaches in the future. 
+- Adding zero knowledge construction will also be an interesting direction.
 
 ### Credits
 
