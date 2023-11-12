@@ -103,12 +103,17 @@ impl KZG10PCS {
         (result, EvalArgument{eval_at_x: result})
     }
 
-    pub fn verify(&self, commitment: &Commitment, eval_argument: &EvalArgument, x: &Scalar) -> bool {
-        let coeffs = &commitment.values;
+    pub fn verify(&self, 
+        cm: &Commitment, 
+        eval_argument: &EvalArgument, 
+        x: &Scalar,
+        e: &Scalar,
+    ) -> bool {
+        let coeffs = &cm.values;
         let poly = FftUniPolynomial::from_coeffs_fft(&coeffs);
         let result = poly.evaluate(x);
-
-        result == eval_argument.eval_at_x
+        result == *e && 
+            result == eval_argument.eval_at_x
     }
 
     pub fn prove_degree_bound(&self, 

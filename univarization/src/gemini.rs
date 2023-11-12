@@ -55,7 +55,7 @@ impl MlePCSystem {
         // let mut domain_size = mle.len();
 
         let mut coeffs: Vec<Scalar> = mle_poly.compute_coeffs();
-        println!("coeffs={}", scalar_vector_to_string(&coeffs));
+        // println!("coeffs={}", scalar_vector_to_string(&coeffs));
 
         let mut unipoly_cm_vec: Vec<Commitment> = Vec::new();
         let mut unipoly_vec: Vec<FftUniPolynomial> = Vec::new();
@@ -67,12 +67,12 @@ impl MlePCSystem {
 
             let coeffs_e: Vec<Scalar> = coeffs.iter().step_by(2).cloned().collect();
             let coeffs_o: Vec<Scalar> = coeffs.iter().skip(1).step_by(2).cloned().collect();
-            debug!("rd={}, coeffs_e={}", i, scalar_vector_to_string(&coeffs_e));
-            debug!("rd={}, coeffs_o={}", i, scalar_vector_to_string(&coeffs_o));
+            // debug!("rd={}, coeffs_e={}", i, scalar_vector_to_string(&coeffs_e));
+            // debug!("rd={}, coeffs_o={}", i, scalar_vector_to_string(&coeffs_o));
 
             coeffs = coeffs_e.iter().zip(coeffs_o.iter())
                 .map(| (&e, &o) | e + xs[i] * o).collect();
-            debug!("rd={}, coeffs_next={}", i, scalar_vector_to_string(&coeffs));
+            // debug!("rd={}, coeffs_next={}", i, scalar_vector_to_string(&coeffs));
             domain_size /= 2;
             tr.update_with_scalar_vec(&f_cm.values);
             unipoly_cm_vec.push(f_cm);
@@ -83,7 +83,7 @@ impl MlePCSystem {
         assert_eq!(coeffs.len(), 1);
 
         let beta = tr.generate_challenge();
-        // let beta = Scalar::from(2);
+        println!("beta={}", ScalarExt::to_string(&beta));
 
         let mut f_eval_pos_vec: Vec<Scalar> = Vec::new();
         let mut f_eval_pos_proof: Vec<kzg10::EvalArgument> = Vec::new();
@@ -97,6 +97,8 @@ impl MlePCSystem {
             let f_cm = &unipoly_cm_vec[i];
             let f_poly = &unipoly_vec[i];
             let (f_eval_pos, eval_proof) = self.kzg10.prove(&f_poly, &beta);
+
+            // assert!(self.kzg10.verify(&f_cm, &eval_proof, &beta, &f_eval_pos));
             f_eval_pos_vec.push(f_eval_pos);
             f_eval_pos_proof.push(eval_proof);
 
@@ -104,8 +106,8 @@ impl MlePCSystem {
             f_eval_neg_vec.push(f_eval_neg);
             f_eval_neg_proof.push(eval_proof);
 
-            debug!("rd={}, f_eval_pos={}", i, ScalarExt::to_string(&f_eval_pos));
-            debug!("rd={}, f_eval_neg={}", i, ScalarExt::to_string(&f_eval_neg));
+            // debug!("rd={}, f_eval_pos={}", i, ScalarExt::to_string(&f_eval_pos));
+            // debug!("rd={}, f_eval_neg={}", i, ScalarExt::to_string(&f_eval_neg));
 
             if i != 0 {
                 let f_eval_sq = f_poly.evaluate(&(beta * beta));
@@ -143,8 +145,8 @@ impl MlePCSystem {
             let f_cm = &cm_vec[i];
             tr.update_with_scalar_vec(&f_cm.values);
         }
-        // TODO: challenge from the transcript
         let beta = tr.generate_challenge();
+        println!("beta={}", ScalarExt::to_string(&beta));
 
         for i in (0..num_rounds) {
             let rho = rho_vec.pop().unwrap();
@@ -154,7 +156,31 @@ impl MlePCSystem {
             assert_eq!(prf.evals_sq[i], rhs);
         }
 
-        true
+        for i in 0..prf.evals_pos.len() {
+            let b = self.kzg10.verify(&prf.poly_cm_vec[i], 
+                &prf.evals_pos_proof[i], 
+                &beta,
+                &prf.evals_pos[i]);
+            assert!(b, "failed at round {}", i);
+        }
+
+        for i in 0..prf.evals_neg.len() {
+            let b = self.kzg10.verify(&prf.poly_cm_vec[i], 
+                &prf.evals_neg_proof[i], 
+                &(-beta),
+                &prf.evals_neg[i]);
+            assert!(b, "failed at round {}", i);
+        }
+
+        for i in 0..prf.evals_sq_proof.len() {
+            let b = self.kzg10.verify(&prf.poly_cm_vec[i+1], 
+                &prf.evals_sq_proof[i], 
+                &(beta * beta),
+                &prf.evals_sq[i]);
+            assert!(b, "failed at round {}", i);
+        }
+
+        prf.evals_sq[num_rounds-1] == *e
     }
 }
 

@@ -5,3 +5,12 @@
 2. kzg10 commitment
 3. more comments about the order of variables
 4. better display for scalar vectors
+
+- Sumcheck implmentation (non-ZK)
+- MiniSpartan based on Sumcheck (non-ZK)
+- Multi-linear polymonial over integer domain
+- Univariate polynomial over \mathbb{H} domain and integer domain
+- Multi-variate PCS => Univariate PCS
+    - Gemini: tensor-product argument
+    - Logup+ ([PH23]): Section 5.
+

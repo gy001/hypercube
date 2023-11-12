@@ -128,10 +128,10 @@ impl UniSumcheckSystem {
 
         let zeta = trans.generate_challenge();
 
-        assert!(self.kzg10.verify(&a_cm, &prf.a_eval_proof, &zeta));
-        assert!(self.kzg10.verify(&b_cm, &prf.b_eval_proof, &zeta));
-        assert!(self.kzg10.verify(&q_cm, &prf.q_eval_proof, &zeta));
-        assert!(self.kzg10.verify(&g_cm, &prf.g_eval_proof, &zeta));
+        assert!(self.kzg10.verify(&a_cm, &prf.a_eval_proof, &zeta, &prf.a_eval));
+        assert!(self.kzg10.verify(&b_cm, &prf.b_eval_proof, &zeta, &prf.b_eval));
+        assert!(self.kzg10.verify(&q_cm, &prf.q_eval_proof, &zeta, &prf.q_eval));
+        assert!(self.kzg10.verify(&g_cm, &prf.g_eval_proof, &zeta, &prf.g_eval));
         assert!(self.kzg10.verify_degree_bound(&q_cm, domain_size, &prf.q_deg_proof));
         assert!(self.kzg10.verify_degree_bound(&g_cm, domain_size - 1, &prf.g_deg_proof));
 

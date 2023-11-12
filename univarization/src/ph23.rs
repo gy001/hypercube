@@ -151,7 +151,7 @@ impl MlePCSystem {
             for k in 0..=n {
                 let omega_k = FftUniPolynomial::get_root_of_unity(k);
                 // c_poly.evaluate(&(omega_k * zeta))
-                let b = self.kzg10.verify(&c_cm, &c_eval_prfs[k], &(omega_k * zeta));
+                let b = self.kzg10.verify(&c_cm, &c_eval_prfs[k], &(omega_k * zeta), &c_evals[k]);
                 assert!(b);
             };
     
