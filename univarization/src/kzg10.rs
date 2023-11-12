@@ -5,7 +5,9 @@ use crate::*;
 
 use crate::fftunipoly::FftUniPolynomial;
 use crate::unipoly::UniPolynomial;
+use crate::snark::eval_eq_r;
 
+#[derive(Copy, Clone)]
 pub struct StructuralReferenceString {
     secret: Scalar,
     // pub powers: Vec<G2>,
@@ -103,6 +105,67 @@ impl KZG10PCS {
         result == eval_argument.eval_at_x
     }  
 } 
+
+#[derive(Copy, Clone)]
+pub struct MultiPCS {
+    pub srs: StructuralReferenceString,
+}
+
+pub struct MultiCommitment{
+    values: Vec<Scalar>,
+}
+
+impl MultiCommitment{
+    pub fn values(&self) -> Vec<Scalar>{
+        self.values.clone()
+    }
+}
+
+pub struct MultiProof{
+    eval: Scalar
+}
+
+impl MultiPCS{
+    pub fn setup(max_degree: usize) ->  Self{
+        // let beta = Scalar::rand(rng);
+        let beta = Scalar::from_u64(2);
+
+        let srs = StructuralReferenceString {
+            secret: beta,
+            max_degree: max_degree,
+        };
+
+        Self {
+            srs: srs,
+        }
+    }
+
+    pub fn commit(&self, polynomial: &UniPolynomial) -> MultiCommitment {
+
+        let coeffs = &polynomial.coeffs;
+
+        MultiCommitment {
+            values: coeffs.clone(),
+        }
+    }
+
+    pub fn prove_eval(&self, commit: &MultiCommitment, eval: Scalar) -> MultiProof {
+    
+        MultiProof {
+            eval
+        }
+
+    }
+
+    pub fn verify_eval(&self, commit: &MultiCommitment, proof: &MultiProof, r: &Vec<Scalar>) -> bool {
+        let values = commit.values.clone();
+        assert_eq!(log_2(values.len()), r.len());
+        let eval = eval_eq_r(&values, r);
+
+        eval == proof.eval
+    }    
+
+}
 
 mod tests {
     use crate::*;

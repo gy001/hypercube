@@ -23,6 +23,7 @@ pub mod transcript;
 pub mod unisumcheck;
 pub mod fftunipoly;
 pub mod ph23;
+pub mod snark;
 
 // Initialize the logger
 pub fn init_logger() {
