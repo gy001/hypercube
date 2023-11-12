@@ -17,6 +17,17 @@ impl EqPolynomial {
         }
     }
 
+    // compute eq(i_vec, r_vec) in O(log n)
+    pub fn eval(&self, i: usize) -> Scalar {
+        let x_log_vec = &self.x_vec;
+        let i_bits = bits(i, x_log_vec.len());
+
+        // EQ = \prod_{i}((1 - x_i) * (1 - r_i) + x_i * r_i)
+        (0..x_log_vec.len()).map(|i| 
+            if i_bits[i] {x_log_vec[i]} else {Scalar::from(1) - x_log_vec[i]}
+            ).product()
+    }
+
     // compute all evals in O(n), from [Tha13]
     //  e.g.
     //      e0 = (1-x2)(1-x1)(1-x0)

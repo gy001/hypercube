@@ -1,6 +1,9 @@
 
+use ark_poly::domain;
+
 use crate::*;
 
+use crate::fftunipoly::FftUniPolynomial;
 use crate::unipoly::UniPolynomial;
 
 pub struct StructuralReferenceString {
@@ -14,7 +17,7 @@ pub struct KZG10PCS {
 }
 
 pub struct Commitment{
-    values: Vec<Scalar>,
+    pub values: Vec<Scalar>,
 }
 
 pub struct EvalArgument {
@@ -49,6 +52,25 @@ impl KZG10PCS {
         }
     }
 
+    pub fn commit_poly(&self, polynomial: &FftUniPolynomial) -> Commitment {
+
+        assert!(polynomial.degree < self.srs.max_degree);
+
+        let coeffs = &polynomial.coeffs;
+
+        Commitment {
+            values: coeffs.clone(),
+        }
+    }
+
+    pub fn commit_evals(&self, evals: &Vec<Scalar>, domain_size: usize) -> Commitment {
+        assert!(domain_size.is_power_of_two());
+        let poly = FftUniPolynomial::from_evals_fft(&evals, domain_size);
+        Commitment {
+            values: poly.coeffs.clone(),
+        }
+    }
+
     pub fn open(&self, commitment: &Commitment, polynomial: &UniPolynomial) -> bool {
         let coeffs = &polynomial.coeffs;
         let s_vec = &commitment.values;
@@ -67,6 +89,19 @@ impl KZG10PCS {
 
         result == eval_argument.eval_at_x
     }    
+
+    pub fn prove(&self, polynomial: &FftUniPolynomial, x: &Scalar) -> (Scalar, EvalArgument) {
+        let result = polynomial.evaluate(x);
+        (result, EvalArgument{eval_at_x: result})
+    }
+
+    pub fn verify(&self, commitment: &Commitment, eval_argument: &EvalArgument, x: &Scalar) -> bool {
+        let coeffs = &commitment.values;
+        let poly = FftUniPolynomial::from_coeffs_fft(&coeffs);
+        let result = poly.evaluate(x);
+        
+        result == eval_argument.eval_at_x
+    }  
 } 
 
 mod tests {

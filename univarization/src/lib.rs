@@ -20,11 +20,9 @@ pub mod mle;
 pub mod gemini;
 pub mod sumcheck;
 pub mod transcript;
-<<<<<<< HEAD
 pub mod unisumcheck;
 pub mod fftunipoly;
-=======
->>>>>>> 0925ef6918170daba4d9ffc4d25ec8be99e05855
+pub mod ph23;
 
 // Initialize the logger
 pub fn init_logger() {
@@ -47,7 +45,7 @@ pub fn log_2(n: usize) -> usize {
 }
 
 pub fn pow_2(n: usize) -> usize {
-    assert_ne!(n, 0);
+    // assert_ne!(n, 0);
     let p = (2 as u32).pow(n as u32);
     p as usize
 }

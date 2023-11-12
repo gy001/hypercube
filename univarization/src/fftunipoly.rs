@@ -3,6 +3,7 @@ use crate::*;
 
 // fft/ifft polynomials over smooth domain (multiplicative subgroup)
 
+#[derive(Debug, Clone)]
 pub struct FftUniPolynomial {
     pub degree: usize,
     pub coeffs: Vec<Scalar>,
@@ -16,7 +17,6 @@ pub struct FftUniPolynomial {
 //   H = {1, w, w^2, ..., w^{n-1}}
 //   the evaluation domain is H, i.e., multiplicative subgroup of Fp
 //   and `n` must be a power of 2
-
 impl FftUniPolynomial {
 
     pub fn zero_polynomial() -> Self {
@@ -36,26 +36,19 @@ impl FftUniPolynomial {
         // let mut padded_zeros = vec![Scalar::zero(); domain_size - coeffs.len()];
         // let mut coeffs = coeffs.to_vec();
         // coeffs.extend(padded_zeros);
-        let coeffs = coeffs.to_vec();
+        let mut coeffs = coeffs.to_vec();
 
         // Self::ntt_evals_from_coeffs(&mut coeffs, log_2(domain_size));
         // let evals = coeffs;
-    
-        let degree: usize = {
-            let mut deg = coeffs.len() - 1;
-            for c in coeffs.iter().rev() {
-                if c.is_zero() && deg > 0 {
-                    deg -= 1;
-                } else {
-                    break;
-                }
-            };
-            deg
-        };
+            
+        // Remove leading zeros from result
+        while coeffs.len() > 1 && coeffs[coeffs.len() - 1] == Scalar::zero() {
+            coeffs.pop();
+        }
     
         Self {
-                degree: degree,
-                coeffs: coeffs,
+            degree: coeffs.len() - 1,
+            coeffs: coeffs,
         }
     }
 
