@@ -23,7 +23,7 @@ f(1, 1, 1) = v_7
 ```
 where $`v_i`$ is the value of the polynomial at the point $`(x_1, x_2, x_3)`$ = $`(i_1, i_2, i_3)`$. Point $`v_i`$ is each a vertex of the hypercube. We can then evaluate over the hypercube to get the partial sums from the sumcheck protocol. The purpose of evaluating the polynomial on a Boolean hypercube is that multilinear sumcheck is efficient for bitwise operations.
 
-Thinking of zk-SNARKS construction as hypercubes is very intuitive. For example, R1CS follows the general form of Az x Bz = Cz, which we can decompose it into multiple polynomials as shown in the diagram below. Each polynomial is a hypercube, and to evalutate their relationships we just need to evaluate by traversing the vertices of the hypercubes.
+Thinking of zk-SNARKS construction as hypercubes is very intuitive. For example, R1CS follows the general form of $`A\vec{z}\circ B\vec{z} = C\vec{z}`$, which we can decompose it into multiple polynomials as shown in the diagram below. Each polynomial is a hypercube, and to evalutate their relationships we just need to evaluate by traversing the vertices of the hypercubes.
 
 ![hypercube](./img/hypercube.png)
 
@@ -50,6 +50,10 @@ The main files showcasing our work are as follows (in the `univarization/src` fo
 - `gemini.rs`: implementation of the Gemini univarization technique as mentioned above
 - `ph.rs`: implementation of the LogUp+ technique as mentioned above
 - `fftunipoly.rs`: FFT functions needed on polynomial commitments
+
+### Future Work
+
+ZeroMorph is not implemented yet due to time constraint. Some of the polynomial constructions are not fully optimized yet. We look to benchmark the three approaches in the future. Adding zero knowledge construction will also be an interesting direction.
 
 ### Credits
 
