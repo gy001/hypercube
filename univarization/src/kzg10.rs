@@ -6,22 +6,29 @@ use crate::*;
 use crate::fftunipoly::FftUniPolynomial;
 use crate::unipoly::UniPolynomial;
 
+#[derive(Clone)]
 pub struct StructuralReferenceString {
     secret: Scalar,
     // pub powers: Vec<G2>,
     pub max_degree: usize,
 }
 
+#[derive(Clone)]
 pub struct KZG10PCS {
     pub srs: StructuralReferenceString,
 }
 
+#[derive(Clone)]
 pub struct Commitment{
     pub values: Vec<Scalar>,
 }
 
 pub struct EvalArgument {
     eval_at_x: Scalar,
+}
+
+pub struct DegreeBoundArgument {
+    degree: usize,
 }
 
 // TODO: mock implementation of KZG10
@@ -99,9 +106,29 @@ impl KZG10PCS {
         let coeffs = &commitment.values;
         let poly = FftUniPolynomial::from_coeffs_fft(&coeffs);
         let result = poly.evaluate(x);
-        
+
         result == eval_argument.eval_at_x
-    }  
+    }
+
+    pub fn prove_degree_bound(&self, 
+        commitment: &Commitment, 
+        polynomial: &FftUniPolynomial,
+        degree_bound: usize,
+    ) -> DegreeBoundArgument {
+        DegreeBoundArgument {
+            degree: polynomial.degree,
+        }
+    }
+
+    pub fn verify_degree_bound(&self, 
+        commitment: &Commitment, 
+        degree_bound: usize,
+        deg_argument: &DegreeBoundArgument
+    ) -> bool {
+        let coeffs = &commitment.values;
+        coeffs.len() <= degree_bound 
+            && deg_argument.degree < degree_bound
+    }
 } 
 
 mod tests {
