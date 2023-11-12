@@ -58,7 +58,7 @@ The main files showcasing our work are as follows (in the `univarization/src` fo
 - `fftunipoly.rs`: FFT functions needed on polynomial commitments
 - `snark.rs`: implementation of a Spartan like proving system
 
-We use ark_bn254, ark_std, ark_ff and ark_poly in our implementations.
+We use ark_bn254, ark_std, ark_ff in our implementations.
 
 | File           | Blank | Comment | Code |
 | -------------- | ----- | ------- | ---- |
