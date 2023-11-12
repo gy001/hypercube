@@ -28,7 +28,7 @@ impl UniPolynomial {
         let degree: usize = {
             let mut deg = evals.len() - 1;
             for c in coeffs.iter() {
-                if c.is_zero() {
+                if c.is_zero() && deg > 1 {
                     deg -= 1;
                 } else {
                     break;
