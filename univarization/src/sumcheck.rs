@@ -155,7 +155,7 @@ impl SumcheckSystem {
         let num_rounds = f_vec[0].num_var;
 
         let mut e = claimed_sum.to_owned();
-
+            
         // TODO: should add degree bounds checking for G_func(f_vec)
         
         // r_vec for collecting randomness generated in each round by RO 
@@ -198,7 +198,7 @@ impl SumcheckSystem {
                     |k| Scalar::from(3) * polys[k][half + i] - Scalar::from(2) * polys[k][i]).collect(), num_poly
                 );
             }
-
+            
             // check f'(0) + f'(1) = f(r)
             assert_eq!(e, g_evals[0] + g_evals[1]);
 
@@ -210,6 +210,7 @@ impl SumcheckSystem {
                 polys[i].fold_into_half(&r);
             }
             half /= 2;
+            // println!("poly[0] = {}, poly[1] = {}, poly[2] = {}, poly[3] = {}", polys[0],polys[1],polys[2], polys[3]);
 
             let g_poly = UniPolynomial::from_evals(&g_evals, degree_bound + 1);
             // reduce the sum
