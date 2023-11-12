@@ -1,10 +1,12 @@
 ## TODOs
 
-- use `log::{debug, info, trace}` instead of `println!()`
-1. unipoly coeffs should be [f0, f1, ..., fn]
-2. kzg10 commitment
-3. more comments about the order of variables
-4. better display for scalar vectors
+- unipoly coeffs should be [f0, f1, ..., fn]
+- more comments for readable
+- clean up the code 
+- towards zeromorph
+- shift over hypercube in hyperplonk
+- shift over pyramid-like subgroups ([PH23])
+
 
 - Sumcheck implmentation (non-ZK)
 - MiniSpartan based on Sumcheck (non-ZK)

@@ -5,9 +5,11 @@ use crate::transcript::Transcript;
 use crate::unipoly::UniPolynomial;
 use crate::kzg10::{KZG10PCS, Commitment};
 use crate::fftunipoly::FftUniPolynomial;
+use crate::unisumcheck::UniSumcheckSystem;
 
 pub struct MlePCSystem {
     kzg10: KZG10PCS,
+    unisc: UniSumcheckSystem,
 }
 
 pub struct EvalArgument {
@@ -16,14 +18,17 @@ pub struct EvalArgument {
     c_evals: Vec<Scalar>,
     c_eval_proofs: Vec<kzg10::EvalArgument>,
     q_eval: Scalar,
+    sc_proof: unisumcheck::UniSumcheckArg,
 }
 
 impl MlePCSystem {
 
     pub fn setup() -> Self {
         let kzg10 = KZG10PCS::setup(64);
+        let unisc = UniSumcheckSystem::setup(&kzg10);
         MlePCSystem {
             kzg10: kzg10,
+            unisc: unisc,
         }
     }
 
@@ -37,14 +42,24 @@ impl MlePCSystem {
         let n = mle.num_var;
         let domain_size = pow_2(mle.num_var);
         let e = mle.evaluate(xs);
-        
+
         tr.update_with_scalar_vec(&mle_cm.values);
+        let f_vec = mle.evals.clone();
+        let f_poly = FftUniPolynomial::from_evals_fft(&f_vec, domain_size);
+        let f_cm = mle_cm;
 
         let c_vec = EqPolynomial::new(&xs.to_vec()).evals_over_hypercube();
         let c_poly = FftUniPolynomial::from_evals_fft(&c_vec, domain_size);
         println!("c_vec={}", scalar_vector_to_string(&c_vec));
 
         let c_cm = self.kzg10.commit_poly(&c_poly);
+
+        let sum = f_vec.iter().zip(c_vec.iter()).map(
+            | (f, c) |  *f * *c).sum::<Scalar>();
+        
+        assert_eq!(e, sum);
+
+        println!("sum={}", ScalarExt::to_string(&sum));
 
         tr.update_with_scalar_vec(&c_cm.values);
         
@@ -108,12 +123,16 @@ impl MlePCSystem {
         // println!("h={}", ScalarExt::to_string(&h));
         assert_eq!(h, q_poly.evaluate(&zeta) * zH_poly.evaluate(&zeta));
 
+        let sc_prf = self.unisc.prove(&f_cm, &c_cm, &f_poly, &c_poly, &sum, tr);
+
+        // double check
         (e, EvalArgument{
             c_commitment: c_cm,
             q_commitment: q_cm,
             c_evals: c_evals,
             c_eval_proofs: c_eval_prfs,
             q_eval: q_poly.evaluate(&zeta),
+            sc_proof: sc_prf,
         })
     }
 
@@ -125,8 +144,9 @@ impl MlePCSystem {
 
             tr.update_with_scalar_vec(&mle_cm.values);
     
+            let f_cm = mle_cm;
             let c_cm = &prf.c_commitment;
-    
+            
             tr.update_with_scalar_vec(&c_cm.values);
             
             let alpha = tr.generate_challenge();
@@ -166,7 +186,7 @@ impl MlePCSystem {
             // println!("h={}", ScalarExt::to_string(&h));
             assert_eq!(h, prf.q_eval * zH_poly.evaluate(&zeta));
     
-            true
+            self.unisc.verify(&f_cm, &c_cm, &e, &prf.sc_proof, tr)
         }
 }
 
