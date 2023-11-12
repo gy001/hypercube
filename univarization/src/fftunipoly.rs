@@ -393,6 +393,8 @@ impl FftUniPolynomial {
 }
 
 mod tests {
+    use ark_ff::FpParameters;
+
     use crate::{*, mle::EqPolynomial};
     use super::*;
 
@@ -664,10 +666,9 @@ mod tests {
         let b = Scalar::from_i64_vector(&vec![2, 3, 1, 2]);
 
         // sum = 19
-        let inner_prod: Scalar = (0..a.len()).map(|i| a[i] * b[i]).sum();
+        let c: Scalar = (0..a.len()).map(|i| a[i] * b[i]).sum();
 
-        println!("inner_prod={}", ScalarExt::to_string(&inner_prod));
-
+        println!("inner_prod={}", ScalarExt::to_string(&c));
 
         let a_poly = FftUniPolynomial::from_evals_fft(&a, 4);
         let b_poly = FftUniPolynomial::from_evals_fft(&b, 4);
@@ -677,10 +678,34 @@ mod tests {
         println!("ab_prod.coeffs={}", scalar_vector_to_string(&ab_prod.coeffs));
         println!("ab_prod.degree={}", ab_prod.degree);
 
-        let z_poly = FftUniPolynomial::vanishing_polynomial(4);
-        println!("z_poly.coeffs={}", scalar_vector_to_string(&z_poly.coeffs));
-        println!("z_poly.degree={}", z_poly.degree);
+        let zH_poly = FftUniPolynomial::vanishing_polynomial(4);
+        println!("z_poly.coeffs={}", scalar_vector_to_string(&zH_poly.coeffs));
+        println!("z_poly.degree={}", zH_poly.degree);
 
+        let (q_poly, r_poly) = ab_prod.div(&zH_poly);
+        println!("q_poly.coeffs={}", scalar_vector_to_string(&q_poly.coeffs));
+        println!("r_poly.coeffs={}", scalar_vector_to_string(&r_poly.coeffs));
+        println!("c/n={}", c / Scalar::from(4));
+
+        let mut coeffs = r_poly.coeffs.clone();
+        coeffs.remove(0);
+        println!("g_poly.coeffs={}", scalar_vector_to_string(&coeffs));
+
+        let g_poly = FftUniPolynomial::from_coeffs_fft(&coeffs);
+
+        // let zeta = Scalar::rand(&mut ark_std::test_rng());
+        let zeta = Scalar::one();
+
+        let g_zeta = g_poly.evaluate(&zeta);
+        let a_zeta = a_poly.evaluate(&zeta);
+        let b_zeta = b_poly.evaluate(&zeta);
+        let q_zeta = q_poly.evaluate(&zeta);
+        let zH_zeta = zH_poly.evaluate(&zeta);
+        let ab_zeta = ab_prod.evaluate(&zeta);
+        let r_zeta = r_poly.evaluate(&zeta);
+
+        assert_eq!(a_zeta * b_zeta, q_zeta * zH_zeta + r_zeta);
+        assert_eq!(a_zeta * b_zeta, q_zeta * zH_zeta + zeta * g_zeta + (c / Scalar::from(4)));
 
         // let f1_poly = UniPolynomial::from_evals_fft(&f1, 4);
         // let f2_poly = UniPolynomial::from_evals_fft(&f2, 4);

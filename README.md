@@ -6,6 +6,12 @@ This is a project as part of ZK Hack Istanbul 2023. zk-SNARKS has always been a 
 
 The goal is to implement cryptographic primitives to reduce sumcheck-based zk-SNARKS proving system into a univariate polynomial eventually. We call it "Hello, Hypercube!" because a multilinear polynomial can be represented as points on a Boolean hypercube and reduced through evaluations on it partial sum (using sumcheck).
 
+Such reduction can be used in:
+- Sumcheck-based zk-SNARKS
+- Nova-like folding schemes
+- Lasso/Jolt zkVM systems
+- GKR-based protocols
+
 ### Overview
 
 ![Overview](./img/univarization.png)
@@ -23,7 +29,7 @@ f(1, 1, 1) = v_7
 ```
 where $`v_i`$ is the value of the polynomial at the point $`(x_1, x_2, x_3)`$ = $`(i_1, i_2, i_3)`$. Point $`v_i`$ is each a vertex of the hypercube. We can then evaluate over the hypercube to get the partial sums from the sumcheck protocol. The purpose of evaluating the polynomial on a Boolean hypercube is that multilinear sumcheck is efficient for bitwise operations.
 
-Thinking of zk-SNARKS construction as hypercubes is very intuitive. For example, R1CS follows the general form of Az x Bz = Cz, which we can decompose it into multiple polynomials as shown in the diagram below. Each polynomial is a hypercube, and to evalutate their relationships we just need to evaluate by traversing the vertices of the hypercubes.
+Thinking of zk-SNARKS construction as hypercubes is very intuitive. For example, R1CS follows the general form of $`A\vec{z}\circ B\vec{z} = C\vec{z}`$, which we can decompose it into multiple polynomials as shown in the diagram below. Each polynomial is a hypercube, and to evalutate their relationships we just need to evaluate by traversing the vertices of the hypercubes.
 
 ![hypercube](./img/hypercube.png)
 
@@ -50,6 +56,31 @@ The main files showcasing our work are as follows (in the `univarization/src` fo
 - `gemini.rs`: implementation of the Gemini univarization technique as mentioned above
 - `ph.rs`: implementation of the LogUp+ technique as mentioned above
 - `fftunipoly.rs`: FFT functions needed on polynomial commitments
+- `snark.rs`: implementation of a Spartan like proving system
+
+We use ark_bn254, ark_std, ark_ff and ark_poly in our implementations.
+
+| File           | Blank | Comment | Code |
+| -------------- | ----- | ------- | ---- |
+| fftunipoly.rs  | 142   | 70      | 517  |
+| snark.rs       | 78    | 36      | 325  |
+| sumcheck.rs    | 97    | 54      | 247  |
+| unipoly.rs     | 112   | 302     | 224  |
+| mle.rs         | 55    | 21      | 219  |
+| lib.rs         | 50    | 12      | 181  |
+| kzg10.rs       | 55    | 8       | 169  |
+| gemini.rs      | 36    | 8       | 140  |
+| ph23.rs        | 38    | 15      | 140  |
+| unisumcheck.rs | 36    | 7       | 130  |
+| transcript.rs  | 20    | 2       | 98   |
+| **SUM**        | 719   | 535     | 2390 |
+
+### Future Work
+
+- ZeroMorph is not implemented yet due to time constraint. 
+- Some of the polynomial constructions are not fully optimized yet. 
+- We look to benchmark the three approaches in the future. 
+- Adding zero knowledge construction will also be an interesting direction.
 
 ### Credits
 

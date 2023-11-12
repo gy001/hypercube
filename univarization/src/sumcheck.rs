@@ -201,6 +201,7 @@ impl SumcheckSystem {
             
             // check f'(0) + f'(1) = f(r)
             assert_eq!(e, g_evals[0] + g_evals[1]);
+            println!("rd={}, g_evals={}", _rd, scalar_vector_to_string(&g_evals));
 
             trans.update_with_scalar_vec(&g_evals);
             let r = trans.generate_challenge();
@@ -336,8 +337,51 @@ mod tests {
 
             debug!("sum={}", sum);
 
-        let (r_vec, re, prf) = SumcheckSystem::prove_cubic("test", &sum,
-            &[f0.clone(), f1.clone(), f2.clone()], &G_func, 3, &mut tr.clone());
+            let (r_vec, re, prf) = SumcheckSystem::prove_cubic("test", &sum,
+                &[f0.clone(), f1.clone(), f2.clone()], &G_func, 3, &mut tr.clone());
+
+            debug!("r_vec={}", scalar_vector_to_string(&r_vec));
+            debug!("reduced_sum={}", ScalarExt::to_string(&re));
+
+            let (re_prime, r_vec_prime) = SumcheckSystem::verify(&sum, num_rounds, 3, &prf, &mut tr.clone());
+            assert_eq!(re, re_prime);
+            assert_eq!(r_vec, r_vec_prime);
+
+            // final verification
+            assert_eq!(re, G_func(vec![f0.evaluate(&r_vec), f1.evaluate(&r_vec), f2.evaluate(&r_vec)], 3));
+        }
+    }
+
+    #[test]
+    fn test_sumcheck_cubic_prove_verify_2() {
+        init_logger();
+
+        let rng = &mut ark_std::test_rng();
+        let vector_size = [8];
+
+        for i in 0..vector_size.len() {
+
+            let f0_vec = Scalar::rand_vector(vector_size[i], rng);
+            let f1_vec = Scalar::rand_vector(vector_size[i], rng);
+            let f2_vec = Scalar::rand_vector(vector_size[i], rng);
+            let f0 = MLEPolynomial::new(&f0_vec);
+            let f1 = MLEPolynomial::new(&f1_vec);
+            let f2 = MLEPolynomial::new(&f2_vec);
+
+            let mut tr = Transcript::new_with_name(b"test");
+
+            let G_func = |vs: Vec<Scalar>, size: usize| {
+                vs[0] * vs[1] * vs[2]
+            };
+
+            let num_rounds = f0.num_var;
+            let sum = f0_vec.iter().enumerate().map(
+                |(i, v0)| *v0 * f1_vec[i] * f2_vec[i]).sum::<Scalar>();
+
+            debug!("sum={}", sum);
+
+            let (r_vec, re, prf) = SumcheckSystem::prove_cubic("test", &sum,
+                &[f0.clone(), f1.clone(), f2.clone()], &G_func, 3, &mut tr.clone());
 
             debug!("r_vec={}", scalar_vector_to_string(&r_vec));
             debug!("reduced_sum={}", ScalarExt::to_string(&re));
