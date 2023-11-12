@@ -210,6 +210,18 @@ mod tests {
     }
 
     #[test]
+    fn test_eq_evals_over_hypercube_2() {
+        init_logger();
+
+        let vs = Scalar::from_usize_vector(&[2,3,4]);
+        let eq = EqPolynomial::new(&vs);
+        let evals = eq.evals_over_hypercube();
+        let evals_prime = eq.evals_over_hypercube_slow();
+        assert_eq!(evals, evals_prime);
+        debug!("evals={}", scalar_vector_to_string(&evals));
+    }
+
+    #[test]
     fn test_mle_new() {
         init_logger();
 

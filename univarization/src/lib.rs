@@ -21,11 +21,12 @@ pub mod gemini;
 pub mod sumcheck;
 pub mod transcript;
 pub mod unisumcheck;
+pub mod fftunipoly;
 
 // Initialize the logger
 pub fn init_logger() {
     let env = Env::default()
-        .filter_or("RUST_LOG", "info"); // Set the default log level here
+        .filter_or("RUST_LOG", "debug"); // Set the default log level here
 
     env_logger::Builder::from_env(env)
         .format_timestamp(None) // Customize the log format if needed
@@ -89,8 +90,12 @@ pub fn scalar_modulus() -> BigInteger256 {
 pub trait ScalarExt: Sized + Copy + Zero + One + Eq + std::fmt::Debug + Display {
     fn from_u64(i: u64) -> Self;
 
+    fn from_i64(i: i64) -> Self;
+
     // fn one() -> Self;
     fn two() -> Self;
+
+    fn from_i64_vector(v: &[i64]) -> Vec<Self>;
 
     fn from_usize(v: usize) -> Self;
 
@@ -111,8 +116,13 @@ pub trait ScalarExt: Sized + Copy + Zero + One + Eq + std::fmt::Debug + Display 
 }
 
 impl ScalarExt for Scalar {
+
     fn from_u64(i: u64) -> Self {
         Scalar::from(i as u64)
+    }
+
+    fn from_i64(i: i64) -> Self {
+        Scalar::from(i as i64)
     }
 
     // fn one() -> Self {
@@ -123,6 +133,11 @@ impl ScalarExt for Scalar {
         Scalar::from(2 as u64)
 
     }
+
+    fn from_i64_vector(v: &[i64]) -> Vec<Self> {
+        v.iter().map(| &n | Scalar::from(n as i64)).collect()
+    }
+
 
     fn from_usize(v: usize) -> Self{
         Scalar::from(v as u64)

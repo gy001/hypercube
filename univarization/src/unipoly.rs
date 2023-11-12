@@ -188,6 +188,11 @@ impl UniPolynomial {
 }
 
 // fft/ifft polynomials over smooth domain (multiplicative subgroup)
+/* 
+pub struct FftUniPolynomial {
+    pub degree: usize,
+    pub coeffs: Vec<Scalar>,
+}
 
 // NOTE: 
 //   f(X) = f0 + f1*X + ... + fn*X^n
@@ -198,7 +203,7 @@ impl UniPolynomial {
 //   the evaluation domain is H, i.e., multiplicative subgroup of Fp
 //   and `n` must be a power of 2
 
-impl UniPolynomial {
+impl FftUniPolynomial {
 
     pub fn from_coeffs_fft(coeffs: &[Scalar], domain_size: usize) -> Self {
         assert!(coeffs.len() <= domain_size);
@@ -223,10 +228,8 @@ impl UniPolynomial {
             deg
         };
     
-        UniPolynomial {
+        Self {
                 degree: degree,
-                domain_size: domain_size,
-                evals: evals,
                 coeffs: coeffs0,
         }
     }
@@ -252,7 +255,7 @@ impl UniPolynomial {
             deg
         };
 
-        UniPolynomial {
+        Self {
                 degree: degree,
                 domain_size: domain_size,
                 evals: evals0,
@@ -302,6 +305,18 @@ impl UniPolynomial {
         domain
     }
 
+    pub fn vanishing_polynomial(domain_size: usize) -> Self {
+        let mut coeffs = vec![Scalar::zero(); domain_size * 2];
+        let evals = UniPolynomial::ntt_evals_from_coeffs(&coeffs, log_2(domain_size) + 1);
+        coeffs[0] = -Scalar::one();
+        coeffs[domain_size] = Scalar::one();
+        UniPolynomial { degree: domain_size,
+            domain_size: domain_size * 2, 
+            evals: evals, 
+            coeffs: coeffs,
+        }
+    }
+
     fn ntt_core(coeffs: &mut Vec<Scalar>, omega: &Scalar, k_log_size: usize) {
         let len = coeffs.len();
         let domain_size = (2 as u64).pow(k_log_size as u32) as usize;
@@ -333,18 +348,23 @@ impl UniPolynomial {
         }
     }
 
-    pub fn ntt_evals_from_coeffs(coeffs: &mut Vec<Scalar>, k_log_size: usize) {
+    pub fn ntt_evals_from_coeffs(coeffs: &[Scalar], k_log_size: usize) -> Vec<Scalar> {
+        let mut coeffs = coeffs.to_vec();
         let omega = Self::get_root_of_unity(k_log_size);
-        Self::ntt_core(coeffs, &omega, k_log_size);
+        Self::ntt_core(&mut coeffs, &omega, k_log_size);
+        coeffs
     }
 
-    pub fn ntt_coeffs_from_evals(evals: &mut Vec<Scalar>, k_log_size: usize) {
+    pub fn ntt_coeffs_from_evals(evals: &[Scalar], k_log_size: usize) -> Vec<Scalar> {
+
+        let mut evals = evals.to_vec();
         let omega = Self::get_root_of_unity(k_log_size);
         let omega_inv = omega.inverse().unwrap();
         let domain_size: u64 = (2 as u64).pow(k_log_size as u32);
         let domain_size_inv = Scalar::from(domain_size).inverse().unwrap();
-        Self::ntt_core(evals, &omega_inv, k_log_size);
+        Self::ntt_core(&mut evals, &omega_inv, k_log_size);
         evals.iter_mut().for_each(|e| *e = *e * domain_size_inv);
+        evals
     }
 
     // compute evaluations in O(n^2)
@@ -370,7 +390,88 @@ impl UniPolynomial {
         evals
     }
 
-    pub fn division(dividend: &[Scalar], divisor: &[Scalar]) -> (Vec<Scalar>, Vec<Scalar>) {
+
+    fn multiplication(poly1: &[Scalar], poly2: &[Scalar]) -> Vec<Scalar> {
+        let mut result = vec![Scalar::zero(); poly1.len() + poly2.len() - 1];
+    
+        for i in 0..poly1.len() {
+            for j in 0..poly2.len() {
+                result[i + j] += poly1[i] * poly2[j];
+            }
+        }
+    
+        result
+    }
+
+    pub fn multiply(&self, poly2: &Self) -> Self {
+        assert_eq!(self.domain_size, poly2.domain_size);
+
+        let coeffs_1 = &self.coeffs;
+        let coeffs_2 = &poly2.coeffs;
+        let mut coeffs_m = Self::multiplication(coeffs_1, coeffs_2);
+
+        let degree = &self.degree + &poly2.degree;
+        let domain_size = if degree < self.domain_size {
+            self.domain_size
+        } else {
+            (degree + 1).next_power_of_two()
+        };
+
+        let zeros = vec![Scalar::zero(); domain_size - coeffs_m.len()];
+        coeffs_m.extend(&zeros);
+
+        let evals_m = UniPolynomial::ntt_evals_from_coeffs(&coeffs_m, log_2(domain_size));
+
+        UniPolynomial{
+            degree: degree,
+            domain_size: domain_size,
+            evals: evals_m,
+            coeffs: coeffs_m,
+        }
+    }
+
+    // support addition and subtraction
+    // f1.add(&f2, false) = f1 + f2
+    // f1.add(&f2, true) = f1 - f2
+
+    pub fn add(&self, poly2: &Self, neg: bool) -> Self {
+
+        assert_eq!(self.domain_size, poly2.domain_size);
+        let len1 = self.coeffs.len();
+        let len2 = poly2.coeffs.len();
+        let len_a = std::cmp::max(self.coeffs.len(), poly2.coeffs.len()).next_power_of_two();
+        let mut coeffs_a = vec![Scalar::zero(); len_a];
+
+        for i in 0..coeffs_a.len() {
+            let coeff1 = if i < len1 { self.coeffs[i] } else { Scalar::zero() };
+            let coeff2 = if i < len2 { poly2.coeffs[i] } else { Scalar::zero() };
+            if neg {
+                coeffs_a[i] = coeff1 - coeff2;
+            } else {
+                coeffs_a[i] = coeff1 + coeff2;
+            }
+        }
+
+        let mut degree_a = std::cmp::max(self.degree, poly2.degree);
+        let mut idx = degree_a;
+        println!("coeffs_a={}", scalar_vector_to_string(&coeffs_a));
+
+        while idx > 0 && coeffs_a[idx] == Scalar::zero() {
+            idx -= 1;
+            degree_a -= 1;
+            println!("idx={}, degree_a={}, coeffs_a[idx]={}", idx, degree_a, ScalarExt::to_string(&coeffs_a[idx]));
+        }
+
+        let evals_a = UniPolynomial::ntt_evals_from_coeffs(&coeffs_a, log_2(len_a));
+        UniPolynomial{
+            degree: degree_a,
+            domain_size: self.domain_size,
+            evals: evals_a,
+            coeffs: coeffs_a,
+        }
+    }
+
+    fn division(dividend: &[Scalar], divisor: &[Scalar]) -> (Vec<Scalar>, Vec<Scalar>) {
         let mut quotient = vec![Scalar::zero(); dividend.len() - divisor.len() + 1];
         let mut remainder = dividend.to_vec();
     
@@ -389,7 +490,50 @@ impl UniPolynomial {
         (quotient, remainder)
     }
 
-}
+    // only support division in the same domain_size
+    pub fn div(&self, divisor_poly: &UniPolynomial) -> (UniPolynomial, UniPolynomial) {
+        assert_eq!(self.domain_size, divisor_poly.domain_size);
+        assert!(divisor_poly.degree > 0);
+
+        let mut dividend = self.coeffs.clone();
+        dividend.truncate(self.degree + 1);
+        let mut divisor = divisor_poly.coeffs.clone();
+        divisor.truncate(divisor_poly.degree + 1);
+
+        let (quotient, remainder) = Self::division(&dividend, &divisor);
+
+        let quotient_degree = self.degree - divisor_poly.degree;
+        let quotient_domain_size = if (quotient_degree) / 2 < self.domain_size {
+            self.domain_size / 2
+        } else {
+            self.domain_size
+        };
+
+        let zeros = vec![Scalar::zero(); quotient_domain_size - quotient.len()];
+        let mut coeffs_q = quotient;
+        coeffs_q.extend(&zeros);
+        let evals_q = UniPolynomial::ntt_evals_from_coeffs(&coeffs_q, log_2(domain_size));
+
+        let zeros = vec![Scalar::zero(); domain_size - remainder.len()];
+        let mut coeffs_r = remainder;
+        coeffs_r.extend(&zeros);
+        let evals_r = UniPolynomial::ntt_evals_from_coeffs(&coeffs_r, log_2(domain_size));
+
+        (UniPolynomial{
+            degree: degree,
+            domain_size: domain_size,
+            evals: evals_q,
+            coeffs: coeffs_q,
+        },
+        UniPolynomial{
+            degree: divisor_poly.degree - 1,
+            domain_size: domain_size,
+            evals: evals_r,
+            coeffs: coeffs_r,
+        })
+    }
+
+}*/
 
 mod tests {
     use crate::*;
@@ -491,123 +635,4 @@ mod tests {
         println!("f.coeffs={}", scalar_vector_to_string(&f.coeffs));
     }
 
-    #[test]
-    fn test_get_root_of_unity_8() {
-        let omega = UniPolynomial::get_root_of_unity(3);
-        let mut acc = Scalar::one();
-        for i in 0..16 {
-            acc = acc * omega;
-            println!("omega_{}={}", i, ScalarExt::to_string(&acc));
-        }
-
-        println!("omega^2={}", ScalarExt::to_string(&(omega*omega)));
-
-        let mut p = scalar_modulus();
-        p.div2();
-        p.div2();
-        p.div2();
-        let omega_prime = Scalar::multiplicative_generator().pow(p);
-        println!("omega_prime={}", ScalarExt::to_string(&omega_prime));
-        let mut acc = Scalar::one();
-        for i in 0..8 {
-            acc = omega_prime * acc;
-            println!("omega_prime_pow_{}={}", i, ScalarExt::to_string(&acc));
-        }
-
-    }   
-
-
-    #[test]
-    fn test_get_root_of_unity_16() {
-        let omega = UniPolynomial::get_root_of_unity(4);
-        println!("omega={}", ScalarExt::to_string(&omega));
-        for i in 0..=16 {
-            println!("omega_pow_{}={}", i, ScalarExt::to_string(&omega.pow(&[i as u64,0,0,0])));
-        }
-    }
-
-    #[test]
-    fn test_get_root_of_unity_1m() {
-        let omega = UniPolynomial::get_root_of_unity(20);
-        println!("omega={}", ScalarExt::to_string(&omega));
-        let omega_pow_1m = omega.pow(&[(2 as u64).pow(20),0,0,0]);
-        println!("omega_pow_1m={}", ScalarExt::to_string(&omega_pow_1m));
-    }
-
-    #[test]
-    fn test_ntt_evals_from_coeffs_naive() {
-        let mut coeffs = Scalar::from_usize_vector(&[0,1,0,0]);
-        println!("origin coeffs={}", scalar_vector_to_string(&coeffs));
-        UniPolynomial::ntt_evals_from_coeffs(&mut coeffs, 2);        
-        println!("evals={}", scalar_vector_to_string(&coeffs));
-    }
-
-    #[test] 
-    fn test_ntt_evals_from_coeffs() {
-        let mut coeffs = Scalar::from_usize_vector(&[1,2,3,4,5,6,7,8]);
-        let k = 3;
-        let evals = UniPolynomial::ntt_evals_from_coeffs_slow(&coeffs, k);
-        UniPolynomial::ntt_evals_from_coeffs(&mut coeffs, k);
-        assert_eq!(coeffs, evals);
-    }
-
-    #[test]
-    fn test_fft_domain() {
-        let domain = UniPolynomial::fft_domain(3);
-        println!("domain={}", scalar_vector_to_string(&domain));
-        
-        let len = domain.len();
-        let omega = domain[1];
-        for i in 0..=len {
-            println!("omega_pow_{}={}", i, ScalarExt::to_string(&omega.pow(&[i as u64,0,0,0])));
-        }
-
-        let mut acc = Scalar::one();
-        for i in 0..8 {
-            acc = acc * omega;
-            println!("omega_{}={}", i, ScalarExt::to_string(&acc));
-        }
-
-        assert_eq!(acc, Scalar::one());
-    }
-
-    #[test] 
-    fn test_ntt_core() {
-        let mut coeffs = Scalar::from_usize_vector(&[1,2,3,4,5,6,7,8]);
-        let k = 3;
-        let coeffs0 = coeffs.clone();
-        println!("coeffs={}", scalar_vector_to_string(&coeffs));
-
-        UniPolynomial::ntt_evals_from_coeffs(&mut coeffs, k);
-        println!("evals={}", scalar_vector_to_string(&coeffs));
-
-        UniPolynomial::ntt_coeffs_from_evals(&mut coeffs, k);
-        println!("coeffs={}", scalar_vector_to_string(&coeffs));
-
-        assert_eq!(coeffs, coeffs0);
-    }
-
-    #[test]
-    fn test_division() {
-        let dividend = vec![5, 3, 2, 1].into_iter().map(|x| Scalar::from(x)).collect::<Vec<_>>();
-        let divisor = vec![2, 1].into_iter().map(|x| Scalar::from(x)).collect::<Vec<_>>();
-        let (quotient, remainder) = UniPolynomial::division(&dividend, &divisor);
-        println!("quotient={}", scalar_vector_to_string(&quotient));
-        println!("remainder={}", scalar_vector_to_string(&remainder));
-
-        // assert_eq!(quotient, vec![Scalar::from(2), Scalar::from(1)]);
-        // assert_eq!(remainder, vec![Scalar::from(1)]);
-    }
-
-    #[test]
-    fn test_division_2() {
-        let dividend = vec![3, 0, 1].into_iter().map(|x| Scalar::from(x)).collect::<Vec<_>>();
-        let divisor = vec![1, 1].into_iter().map(|x| Scalar::from(x)).collect::<Vec<_>>();
-        let (quotient, remainder) = UniPolynomial::division(&dividend, &divisor);
-        println!("quotient={}", scalar_vector_to_string(&quotient));
-        println!("remainder={}", scalar_vector_to_string(&remainder));
-        
-        // assert_eq!(quotient, vec![Scalar::from(2), Scalar::from(1)]);
-        // assert_eq!(remainder, vec![Scalar::from(1)]);
-    }
 }
