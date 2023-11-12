@@ -20,8 +20,11 @@ pub mod mle;
 pub mod gemini;
 pub mod sumcheck;
 pub mod transcript;
+<<<<<<< HEAD
 pub mod unisumcheck;
 pub mod fftunipoly;
+=======
+>>>>>>> 0925ef6918170daba4d9ffc4d25ec8be99e05855
 
 // Initialize the logger
 pub fn init_logger() {
