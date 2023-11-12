@@ -60,23 +60,20 @@ The main files showcasing our work are as follows (in the `univarization/src` fo
 
 We use ark_bn254, ark_std, ark_ff and ark_poly in our implementations.
 
--------------------------------------------------------------------------------
-File                             blank        comment           code
--------------------------------------------------------------------------------
-fftunipoly.rs                      142             70            517
-snark.rs                            78             36            325
-sumcheck.rs                         97             54            247
-unipoly.rs                         112            302            224
-mle.rs                              55             21            219
-lib.rs                              50             12            181
-kzg10.rs                            55              8            169
-gemini.rs                           36              8            140
-ph23.rs                             38             15            140
-unisumcheck.rs                      36              7            130
-transcript.rs                       20              2             98
--------------------------------------------------------------------------------
-SUM:                               719            535           2390
-----------------------------------------------------------------------
+| File           | Blank | Comment | Code |
+| -------------- | ----- | ------- | ---- |
+| fftunipoly.rs  | 142   | 70      | 517  |
+| snark.rs       | 78    | 36      | 325  |
+| sumcheck.rs    | 97    | 54      | 247  |
+| unipoly.rs     | 112   | 302     | 224  |
+| mle.rs         | 55    | 21      | 219  |
+| lib.rs         | 50    | 12      | 181  |
+| kzg10.rs       | 55    | 8       | 169  |
+| gemini.rs      | 36    | 8       | 140  |
+| ph23.rs        | 38    | 15      | 140  |
+| unisumcheck.rs | 36    | 7       | 130  |
+| transcript.rs  | 20    | 2       | 98   |
+| **SUM**        | 719   | 535     | 2390 |
 
 ### Future Work
 
