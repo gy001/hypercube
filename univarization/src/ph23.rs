@@ -7,11 +7,13 @@ use crate::kzg10::{KZG10PCS, Commitment};
 use crate::fftunipoly::FftUniPolynomial;
 use crate::unisumcheck::UniSumcheckSystem;
 
+#[derive(Clone)]
 pub struct MlePCSystem {
     kzg10: KZG10PCS,
     unisc: UniSumcheckSystem,
 }
 
+#[derive(Clone)]
 pub struct EvalArgument {
     c_commitment: kzg10::Commitment,
     q_commitment: kzg10::Commitment,

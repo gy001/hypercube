@@ -120,6 +120,10 @@ impl MLEPolynomial {
         }
     }
 
+    pub fn values(&self) -> Vec<Scalar> {
+        self.values()
+    }
+
     pub fn len(&self) -> usize {
         self.evals.len()
     }

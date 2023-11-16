@@ -13,10 +13,12 @@ use crate::transcript::Transcript;
 // argument: <a_vec, b_vec> ?= u
 //   a(X) * b(X) ?= q(X) * z_H(X) + X * g(X) + u/N
 
+#[derive(Clone)]
 pub struct UniSumcheckSystem {
     kzg10: KZG10PCS,
 }
 
+#[derive(Clone)]
 pub struct UniSumcheckArg {
     domain_size: usize,
     q_commitment: Commitment,
