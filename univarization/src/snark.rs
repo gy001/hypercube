@@ -1,20 +1,13 @@
 use crate::*;
 
-// use ark_ec::{pairing::Pairing, CurveGroup};
-// use ark_std::rand::RngCore;
 use ark_ff::Zero;
-// use ark_poly::domain;
 
 use ark_std::log2;
-use kzg10::{MultiCommitment, MultiPCS, Commitment, EvalArgument, MultiProof};
-use crate::unipoly::UniPolynomial;
+use kzg10::Commitment;
 use crate::transcript::Transcript;
 use crate::sumcheck::{SumcheckSystem, SumcheckProof};
 use crate::mle::MLEPolynomial;
 use crate::ph23::{MlePCSystem, EvalArgument as phEvalArgument};
-use core::num;
-// use core::slice::SlicePattern;
-use std::ops::Mul;
 
 #[derive(Clone)]
 pub struct Instance{
@@ -61,11 +54,11 @@ impl Instance {
 #[derive(Clone)]
 pub struct ProveKey{
     pub instance: Instance,
-    pub params: MultiPCS,
+    pub params: MlePCSystem,
 }
 
 impl ProveKey {
-    fn new(params: MultiPCS, instance: Instance) -> Self {
+    fn new(params: MlePCSystem, instance: Instance) -> Self {
         Self {
             params, instance
         }
@@ -75,11 +68,11 @@ impl ProveKey {
 #[derive(Clone)]
 pub struct VerifyKey{
     pub instance: Instance,
-    pub params: MultiPCS,
+    pub params: MlePCSystem,
 }
 
 impl VerifyKey {
-    fn new(params: MultiPCS, instance: Instance) -> Self {
+    fn new(params: MlePCSystem, instance: Instance) -> Self {
         Self {
             params, instance
         }
@@ -93,7 +86,7 @@ pub struct KeyPair{
 }
 
 impl KeyPair{
-    pub fn generate(params: MultiPCS, instance: Instance) -> Self {
+    pub fn generate(params: MlePCSystem, instance: Instance) -> Self {
         Self{
             prove_key: ProveKey::new(params.clone(), instance.clone()),
             verify_key: VerifyKey::new(params, instance)
@@ -110,25 +103,25 @@ impl KeyPair{
 }
 
 pub struct MatrixEncode{
-    comm_a: Commitment,
-    comm_b: Commitment,
-    comm_c: Commitment,
+    pub comm_a: Commitment,
+    pub comm_b: Commitment,
+    pub comm_c: Commitment,
 }
 
 pub struct MatrixEncodeProof {
-    ea: Scalar,
-    eb: Scalar,
-    ec: Scalar,
-    evala: phEvalArgument,
-    evalb: phEvalArgument,
-    evalc: phEvalArgument,
+    pub ea: Scalar,
+    pub eb: Scalar,
+    pub ec: Scalar,
+    pub evala: phEvalArgument,
+    pub evalb: phEvalArgument,
+    pub evalc: phEvalArgument,
 }
 
 impl MatrixEncode {
-    pub fn commit(matrixA: &Vec<Vec<Scalar>>, matrixB: &Vec<Vec<Scalar>>, matrixC: &Vec<Vec<Scalar>>) -> Self{
-        let mut matrixA = matrixA.clone();
-        let mut matrixB = matrixB.clone();
-        let mut matrixC = matrixC.clone();
+    pub fn commit(matrix_a: &Vec<Vec<Scalar>>, matrix_b: &Vec<Vec<Scalar>>, matrix_c: &Vec<Vec<Scalar>>) -> Self{
+        let mut matrix_a = matrix_a.clone();
+        let mut matrix_b = matrix_b.clone();
+        let mut matrix_c = matrix_c.clone();
 
         let sa = MlePCSystem::setup();
         let sb = MlePCSystem::setup();
@@ -137,10 +130,10 @@ impl MatrixEncode {
         let mut vec_a = Vec::new();
         let mut vec_b = Vec::new();
         let mut vec_c = Vec::new();
-        for i in 0..matrixA.len() {
-            vec_a.append(&mut matrixA[i]);
-            vec_b.append(&mut matrixB[i]);
-            vec_c.append(&mut matrixC[i]);
+        for i in 0..matrix_a.len() {
+            vec_a.append(&mut matrix_a[i]);
+            vec_b.append(&mut matrix_b[i]);
+            vec_c.append(&mut matrix_c[i]);
         }
         let poly_a = MLEPolynomial::new(vec_a.as_slice());
         let poly_b = MLEPolynomial::new(vec_b.as_slice());
@@ -155,7 +148,7 @@ impl MatrixEncode {
     }
 }
 
-struct SumcheckRound1Proof{
+pub struct SumcheckRound1Proof{
     pub va: Scalar,
     pub vb: Scalar,
     pub vc: Scalar,
@@ -164,7 +157,7 @@ struct SumcheckRound1Proof{
 }
 
 impl SumcheckRound1Proof{
-    fn generate_proof(value_a: &Vec<Scalar>, value_b: &Vec<Scalar>, value_c: &Vec<Scalar>, eq_values: &Vec<Scalar>, tr: &mut Transcript) -> (Vec<Scalar>, Scalar, SumcheckProof) {
+    pub fn generate_proof(value_a: &Vec<Scalar>, value_b: &Vec<Scalar>, value_c: &Vec<Scalar>, eq_values: &Vec<Scalar>, tr: &mut Transcript) -> (Vec<Scalar>, Scalar, SumcheckProof) {
         assert_eq!(value_a.len(), value_b.len());
         assert_eq!(value_a.len(), value_c.len());
         assert_eq!(value_a.len(), eq_values.len());
@@ -175,19 +168,19 @@ impl SumcheckRound1Proof{
         let poly_c = MLEPolynomial::new(value_c.as_slice());
         let poly_eq = MLEPolynomial::new(eq_values.as_slice());
         
-        let G_func = |vs: Vec<Scalar>, size: usize| {
+        let g_func  = |vs: Vec<Scalar>, _| {
             vs[3] * (vs[0] * vs[1] - vs[2])
         };
-        SumcheckSystem::prove_cubic("sumcheck #1", &claim, &[poly_a, poly_b, poly_c, poly_eq],G_func,3, tr)
+        SumcheckSystem::prove_cubic("sumcheck #1", &claim, &[poly_a, poly_b, poly_c, poly_eq], g_func ,3, tr)
     }
 
-    fn verify(&self, num_rounds: usize, tr: &mut Transcript) -> (Scalar, Vec<Scalar>) {
+    pub fn verify(&self, num_rounds: usize, tr: &mut Transcript) -> (Scalar, Vec<Scalar>) {
         let claim = Scalar::zero();
         SumcheckSystem::verify(&claim, num_rounds, 3, &self.sumcheckproof, tr)
     }
 }
 
-struct SumcheckRound2Proof {
+pub struct SumcheckRound2Proof {
 
     pub value: Scalar,
     pub sumcheckproof: SumcheckProof,
@@ -195,27 +188,28 @@ struct SumcheckRound2Proof {
 }
 
 impl SumcheckRound2Proof{
-    fn generate_proof(claim: Scalar, values: &Vec<Scalar>, input: &Vec<Scalar>, tr: &mut Transcript) ->(Vec<Scalar>, Scalar, SumcheckProof) {
+    pub fn generate_proof(claim: Scalar, values: &Vec<Scalar>, input: &Vec<Scalar>, tr: &mut Transcript) ->(Vec<Scalar>, Scalar, SumcheckProof) {
         let poly = MLEPolynomial::new(values.as_slice());
         let poly_z = MLEPolynomial::new(input.as_slice());
 
-        let G_func = |vs: Vec<Scalar>, size: usize| {
+        let g_func  = |vs: Vec<Scalar>, _| {
             vs[1] * vs[0]
         };
-        SumcheckSystem::prove_cubic("sumcheck #2", &claim, &[poly, poly_z], G_func, 3, tr)
+        SumcheckSystem::prove_cubic("sumcheck #2", &claim, &[poly, poly_z], g_func , 3, tr)
     }
 
-    fn verify(&self, claim: &Scalar, num_rounds: usize, tr: &mut Transcript) -> (Scalar, Vec<Scalar>){
+    pub fn verify(&self, claim: &Scalar, num_rounds: usize, tr: &mut Transcript) -> (Scalar, Vec<Scalar>){
         SumcheckSystem::verify(claim, num_rounds,3, &self.sumcheckproof, tr)
     }
 }
 
-struct SNARKProof {
+pub struct SNARKProof {
     pub v: Scalar,
-    pub wit_comm: MultiCommitment,
+    pub wit_comm: Commitment,
     pub proof1: SumcheckRound1Proof,
     pub proof2: SumcheckRound2Proof,
-    pub wproof: MultiProof,
+    pub ew: Scalar, // proof for witness commitment
+    pub evalw: phEvalArgument,// proof for witness commitment
     pub ma: Scalar,
     pub mb: Scalar,
     pub mc: Scalar,
@@ -223,7 +217,8 @@ struct SNARKProof {
 }
 
 impl SNARKProof{
-    fn generate_proof(params: &MultiPCS, prove_key: &ProveKey, public: &[Scalar], witness: &[Scalar], encode: &MatrixEncode) -> Self{
+    pub fn generate_proof(params: &MlePCSystem, prove_key: &ProveKey, public: &[Scalar], witness: &[Scalar], encode: &MatrixEncode) -> Self{
+
         let mut tr = Transcript::new_with_name(b"snark proof");
         tr.update_with_scalar_vec(&public);
         // TODO: transcript adds more stuffs
@@ -235,10 +230,11 @@ impl SNARKProof{
         assert_eq!(prove_key.instance.m, input.len());
 
         // step 1. PC.Commit(pp, w)
-        let wit_poly = UniPolynomial::from_coeffs(witness, witness.len());
+        let wit_poly = MLEPolynomial::new(witness);
         let wit_comm = params.commit(&wit_poly);
-        
-        tr.update_with_scalar_vec(wit_comm.values().as_slice());
+        let wco = wit_comm.values.clone();
+        tr.update_with_scalar_vec(wco.as_slice());
+
         // step 2. generate tau
         let tau =tr.generate_challenge_vector(s);
         let tau_eq = eval_eq_array(&tau);
@@ -254,9 +250,8 @@ impl SNARKProof{
         let vb = eval_eq_r(&value_b, &rx);
         let vc = eval_eq_r(&value_c, &rx);
         let vr = eval_eq_r(&tau_eq, &rx);
-        // assert_eq!(eval_x, (va * vb - vc) * eval_eq(&rx, &tau));
         assert_eq!(eval_x, (va * vb - vc) * vr);
-        
+
         let proof1 = SumcheckRound1Proof{
             va,
             vb,
@@ -272,7 +267,7 @@ impl SNARKProof{
 
         // step 9: generate claim2 = ra * xa + rb * xb + rc * xc
         let claim2 = ra * proof1.va + rb * proof1.vb + rc * proof1.vc;
-        
+
         // step 10~11: sumcheck #2
         let rx_eq = eval_eq_array(&rx);
         let eval_a = eval_matrix_col(&rx_eq, &prove_key.instance.a_matrix);
@@ -292,25 +287,28 @@ impl SNARKProof{
         // step 12: v = w(ry[1..])
         let v = eval_eq_r(&witness.to_vec(), &ry[1..].to_vec());
         tr.update_with_scalar(&v);
-
-        let wproof = params.prove_eval(&wit_comm, v);
+        
+        // step 13: proof commit(w)
+        let (ew, evalw) = params.prove(&wit_comm, &wit_poly, &ry[1..], &mut tr);
+        tr.update_with_scalar(&ew);
+        // tr.update_with_scalar(&evalw);
 
         let ry_eq = eval_eq_array(&ry);
         let ma = eval_matrix_row_col(&prove_key.instance.a_matrix, &rx_eq, &ry_eq);
         let mb = eval_matrix_row_col(&prove_key.instance.b_matrix, &rx_eq, &ry_eq);
         let mc = eval_matrix_row_col(&prove_key.instance.c_matrix, &rx_eq, &ry_eq);
-        
-        let mut matrixA = prove_key.instance.a_matrix.clone();
-        let mut matrixB = prove_key.instance.a_matrix.clone();
-        let mut matrixC = prove_key.instance.c_matrix.clone();
+
+        let mut matrix_a = prove_key.instance.a_matrix.clone();
+        let mut matrix_b = prove_key.instance.b_matrix.clone();
+        let mut matrix_c = prove_key.instance.c_matrix.clone();
 
         let mut vec_a = Vec::new();
         let mut vec_b = Vec::new();
         let mut vec_c = Vec::new();
-        for i in 0..matrixA.len() {
-            vec_a.append(&mut matrixA[i]);
-            vec_b.append(&mut matrixB[i]);
-            vec_c.append(&mut matrixC[i]);
+        for i in 0..matrix_a.len() {
+            vec_a.append(&mut matrix_a[i]);
+            vec_b.append(&mut matrix_b[i]);
+            vec_c.append(&mut matrix_c[i]);
         }
         let poly_a = MLEPolynomial::new(vec_a.as_slice());
         let poly_b = MLEPolynomial::new(vec_b.as_slice());
@@ -319,10 +317,9 @@ impl SNARKProof{
         let mut ry = ry.clone();
         rs.append(&mut ry);
 
-        let mle = MlePCSystem::setup();
-        let (ea, evala) = mle.prove(&encode.comm_a, &poly_a,&rs, &mut tr);
-        let (eb, evalb) = mle.prove(&encode.comm_b, &poly_b,&rs, &mut tr);
-        let (ec, evalc) = mle.prove(&encode.comm_c, &poly_c,&rs, &mut tr);
+        let (ea, evala) = params.prove(&encode.comm_a, &poly_a,&rs, &mut tr);
+        let (eb, evalb) = params.prove(&encode.comm_b, &poly_b,&rs, &mut tr);
+        let (ec, evalc) = params.prove(&encode.comm_c, &poly_c,&rs, &mut tr);
         let eproof = MatrixEncodeProof{
             ea,
             eb,
@@ -331,12 +328,15 @@ impl SNARKProof{
             evalb,
             evalc,
         };
+
+        println!("test...final");
         Self {
             v,
             wit_comm,
             proof1,
             proof2,
-            wproof,
+            ew,
+            evalw,
             ma,
             mb,
             mc,
@@ -344,17 +344,16 @@ impl SNARKProof{
         }
     }
 
-
-    fn verify(&self, params: &MultiPCS, verify_key: &VerifyKey, public: &[Scalar], encode: &MatrixEncode) -> bool{
+    pub fn verify(&self, params: &MlePCSystem, verify_key: &VerifyKey, public: &[Scalar], encode: &MatrixEncode) -> bool{
         let mut tr = Transcript::new_with_name(b"snark proof");
         tr.update_with_scalar_vec(&public);
-        tr.update_with_scalar_vec(self.wit_comm.values().as_slice());
+        tr.update_with_scalar_vec(self.wit_comm.values.as_slice());
 
         let s = log_2(verify_key.instance.m);
 
         // step 2. generate tau
         let tau =tr.generate_challenge_vector(s);
-        let tau_eq = eval_eq_array(&tau);
+        // let tau_eq = eval_eq_array(&tau);
         
         // step 4~5: sumcheck #1
         let (eval_x, rx) = self.proof1.verify(s, &mut tr);
@@ -370,43 +369,40 @@ impl SNARKProof{
         let rb = tr.generate_challenge();
         let rc = tr.generate_challenge();
 
-        // step 9: geenrate claim2 = ra * xa + rb * xb + rc * xc
+        // step 9: generate claim2 = ra * xa + rb * xb + rc * xc
         let claim2 = ra * self.proof1.va + rb * self.proof1.vb + rc * self.proof1.vc;
 
         // step 10~11: sumcheck #2
         let  (eval_y, ry) = self.proof2.verify(&claim2, s, &mut tr);
 
+        // step 12
+        tr.update_with_scalar(&self.v);
+
         // step 13~14: verify commit(w)
-        let result3 = params.verify_eval(&self.wit_comm, &self.wproof, &ry[1..].to_vec());
+        let result3 = params.verify(&self.wit_comm, &ry[1..].to_vec(), &self.ew, &self.evalw, &mut tr);
         println!("result3 = {}", result3);
+        tr.update_with_scalar(&self.ew);
 
         // step 15: vz = (1-ry[0])w(ry[1..]) + ry[0]input(ry[1..])
         let mut input = vec![Scalar::one()];
         input.append(&mut public.to_vec());
         let vio = eval_eq_r(&input, &ry[1..].to_vec());
         let vz = (Scalar::one() - ry[0]) * vio + ry[0] * self.v;
-        tr.update_with_scalar(&self.v);
-
-        // step 16: v1 = A(rx, ry), v2 = B(rx, ry), v3 = C(rx, ry)
-        // let rx_eq = eval_eq_array(&rx);
-        // let ry_eq = eval_eq_array(&ry);
-        // let v1 = eval_matrix_row_col(&verify_key.instance.a_matrix, &rx_eq, &ry_eq);
-        // let v2 = eval_matrix_row_col(&verify_key.instance.b_matrix, &rx_eq, &ry_eq);
-        // let v3 = eval_matrix_row_col(&verify_key.instance.c_matrix, &rx_eq, &ry_eq);
         
-        // println!("result2 = {}", eval_y == (ra * v1 + rb * v2 + rc * v3) * vz);
-        let result2 = (eval_y == (ra * self.ma + rb * self.mb + rc * self.mc)*vz);
+        // step 16: v1 = A(rx, ry), v2 = B(rx, ry), v3 = C(rx, ry)
+        let result2 = eval_y == (ra * self.ma + rb * self.mb + rc * self.mc) * vz;
         println!("result2 = {}", result2);
 
         let mut rs = rx.clone();
         let mut ry = ry.clone();
         rs.append(&mut ry);
-        let mle = MlePCSystem::setup();
-        let rea = mle.verify(&encode.comm_a, &rs.as_slice(), &self.eproof.ea, &self.eproof.evala, &mut tr);
-        let reb = mle.verify(&encode.comm_b, &rs.as_slice(), &self.eproof.eb, &self.eproof.evalb, &mut tr);
-        let rec = mle.verify(&encode.comm_c, &rs.as_slice(), &self.eproof.ec, &self.eproof.evalc, &mut tr);
+        let rea = params.verify(&encode.comm_a, &rs.as_slice(), &self.eproof.ea, &self.eproof.evala, &mut tr);
+        let reb = params.verify(&encode.comm_b, &rs.as_slice(), &self.eproof.eb, &self.eproof.evalb, &mut tr);
+        let rec = params.verify(&encode.comm_c, &rs.as_slice(), &self.eproof.ec, &self.eproof.evalc, &mut tr);
+        
         println!("rea  = {}, reb = {}, rec = {}", rea, reb, rec);
-        result2
+
+        rea && reb && rec
     }
 
 
@@ -485,7 +481,7 @@ mod tests {
         // input: 1, 2, 2, 
         // witness: 2, 8, 7, 12
         let max_degree = 8;
-        let params = MultiPCS::setup(max_degree);
+        let params = MlePCSystem::setup();
         // a * b = c
         // (b + c) * d = e
         // - a + e = f
@@ -526,7 +522,7 @@ mod tests {
         let public = vec![Scalar::one(), Scalar::one().double(), Scalar::one().double()];
         let witness = vec![Scalar::from_u64(2), Scalar::from_u64(8), Scalar::from_u64(7), Scalar::from_u64(12)];
         let instance = Instance::new(a_matrix, b_matrix, c_matrix, 8, public.clone());
-        let keypair = KeyPair::generate(params, instance);
+        let keypair = KeyPair::generate(params.clone(), instance);
         let proof = SNARKProof::generate_proof(&params, &keypair.prove_key, &public.as_slice(), &witness.as_slice(), &encode);
         let result = proof.verify(&params, &keypair.verify_key, &public.as_slice(), &encode);
         println!("result = {}", result);
