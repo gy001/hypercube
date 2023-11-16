@@ -11,7 +11,7 @@ pub struct FftUniPolynomial {
 
 // NOTE: 
 //   f(X) = f0 + f1*X + ... + fn*X^n
-//   the coeffs vector is [f0, ..., fn]
+//   the coeffs vector is [f0, ..., fn] (More intuitive!)
 
 // NOTE:
 //   H = {1, w, w^2, ..., w^{n-1}}
@@ -31,17 +31,9 @@ impl FftUniPolynomial {
     }
 
     pub fn from_coeffs_fft(coeffs: &[Scalar]) -> Self {
-        // assert!(coeffs.len() <= domain_size);
-        // assert!(domain_size.is_power_of_two());
-        // let mut padded_zeros = vec![Scalar::zero(); domain_size - coeffs.len()];
-        // let mut coeffs = coeffs.to_vec();
-        // coeffs.extend(padded_zeros);
         let mut coeffs = coeffs.to_vec();
 
-        // Self::ntt_evals_from_coeffs(&mut coeffs, log_2(domain_size));
-        // let evals = coeffs;
-            
-        // Remove leading zeros from result
+        // Remove leading zeros
         while coeffs.len() > 1 && coeffs[coeffs.len() - 1] == Scalar::zero() {
             coeffs.pop();
         }
