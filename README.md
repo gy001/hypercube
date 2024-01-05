@@ -62,25 +62,31 @@ The main files showcasing our work are as follows (in the `univarization/src` fo
 
 We use ark_bn254, ark_std and ark_ff in our implementations.
 
-| File           | Blank | Comment | Code |
-| -------------- | ----- | ------- | ---- |
-| fftunipoly.rs  | 142   | 70      | 517  |
-| snark.rs       | 78    | 36      | 325  |
-| sumcheck.rs    | 97    | 54      | 247  |
-| unipoly.rs     | 112   | 302     | 224  |
-| mle.rs         | 55    | 21      | 219  |
-| lib.rs         | 50    | 12      | 181  |
-| kzg10.rs       | 55    | 8       | 169  |
-| gemini.rs      | 36    | 8       | 140  |
-| ph23.rs        | 38    | 15      | 140  |
-| unisumcheck.rs | 36    | 7       | 130  |
-| transcript.rs  | 20    | 2       | 98   |
-| **SUM**        | 719   | 535     | 2390 |
+------------------------------------------------------------------------------------
+File                                blank        comment           code
+------------------------------------------------------------------------------------
+unipoly.rs                            353            497           1023
+mle/mod.rs                             31            186            125
+mle/coeffs_sparse.rs                  132            157            709
+mle/evals_sparse.rs                    66             18            349
+mle/evals.rs                           58             36            272
+ph23_pcs.rs                           175            296            558
+zeromorph.rs                          194            235            530
+bcho_pcs.rs                           127            141            453
+sumcheck.rs                           165             86            418
+snark.rs                               93             67            388
+kzg10.rs                               97            163            293
+lib.rs                                 45              9            140
+unisumcheck.rs                         37             12            130
+transcript.rs                          23              2            107
+bits.rs                                26              3            102
+groupsim.rs                            18              0             72
+------------------------------------------------------------------------------------
+SUM:                                   1640           1908           5669
+------------------------------------------------------------------------------------
 
 ### Future Work
 
-- ZeroMorph is not implemented yet due to time constraint. 
-- Some of the polynomial constructions are not fully optimized yet. 
 - We look to benchmark the three approaches in the future. 
 - Adding zero knowledge construction will also be an interesting direction.
 
