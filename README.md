@@ -52,12 +52,13 @@ cargo test
 ### Code Organization
 
 The main files showcasing our work are as follows (in the `univarization/src` folder):
-- `mle.rs`: representing polynomials using multilinear extension (MLE)
+- `mle/*.rs`: representing polynomials using multilinear extension (MLE)
 - `unipoly.rs`: representing univariate polynomials
 - `sumcheck.rs`: sumcheck protocol on multilinear polynomials
-- `gemini.rs`: implementation of the Gemini univarization technique as mentioned above
-- `ph.rs`: implementation of the LogUp+ technique as mentioned above
-- `fftunipoly.rs`: FFT functions needed on polynomial commitments
+- `bcho_pcs.rs`: implementation of the Gemini univarization technique as mentioned above
+- `ph23_pcs.rs`: implementation of the LogUp+ technique as mentioned above
+- `zeromorph.rs`: implementation of the Zeromorph technique as mentioned above
+- `unipoly.rs`: implementation of univariate polynomials
 - `snark.rs`: implementation of a Spartan like proving system
 
 We use ark_bn254, ark_std and ark_ff in our implementations.
