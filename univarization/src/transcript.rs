@@ -1,3 +1,5 @@
+#![allow(non_snake_case)]
+
 use crate::*;
 use sha3::{Digest, Keccak256};
 
@@ -54,6 +56,16 @@ impl Transcript {
 
     pub fn update_with_scalar(&mut self, a: &Scalar) {
         let a_bytes = a.to_bytes();
+        self.update_with_u256(a_bytes);
+    }
+
+    pub fn update_with_g1(&mut self, a: &G1) {
+        let a_bytes = a.x.to_bytes();
+        self.update_with_u256(a_bytes);
+    }
+
+    pub fn update_with_g2(&mut self, a: &G2) {
+        let a_bytes = a.x.to_bytes();
         self.update_with_u256(a_bytes);
     }
 

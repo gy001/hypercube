@@ -11,8 +11,7 @@ ark-ff = { version = "0.3", default-features = false }
 ark-poly = { version = "0.3" }
 ark-poly-commit = { version = "0.3" }
 ark-bn254 = { version = "0.3.0" }
-merlin = { version = "3.0", default-features = false }
 sha3 = { version = "0.10", default-features = false }
-
+ff = { version = "0.13" , features = ["derive"]}
 log = { version = "0.4" }
 env_logger = { version = "0.10" }

@@ -3,6 +3,7 @@ use core::fmt;
 
 use ark_bn254::Fr;
 use ark_bn254::FrParameters;
+use ark_ec::group;
 use ark_std::{vec::Vec, One, Zero, UniformRand};
 // use ark_std::rand::Rng;
 use ark_ff::{Field, PrimeField, FftField, FftParameters, FpParameters, BigInteger, BigInteger256, ToBytes};
@@ -11,19 +12,33 @@ use ark_std::rand::Rng;
 use env_logger::Env;
 
 pub type Scalar = Fr;
-pub type G1 = <ark_ec::models::bn::Bn<ark_bn254::Parameters> as ark_ec::PairingEngine>::G1Affine;
-pub type G2 = <ark_ec::models::bn::Bn<ark_bn254::Parameters> as ark_ec::PairingEngine>::G2Affine;
+// pub type G1 = <ark_ec::models::bn::Bn<ark_bn254::Parameters> as ark_ec::PairingEngine>::G1Affine;
+// pub type G2 = <ark_ec::models::bn::Bn<ark_bn254::Parameters> as ark_ec::PairingEngine>::G2Affine;
+// pub type G1Projective = <ark_ec::models::bn::Bn<ark_bn254::Parameters> as ark_ec::PairingEngine>::G1Projective;
+// pub type G2Projective = <ark_ec::models::bn::Bn<ark_bn254::Parameters> as ark_ec::PairingEngine>::G2Projective;
 
+pub type G1 = groupsim::G1;
+pub type G2 = groupsim::G2;
+pub type GT = groupsim::GT;
+
+pub mod groupsim;
+pub mod bits;
 pub mod unipoly;
 pub mod kzg10; // TODO: mock implementation of KZG10
 pub mod mle;
-pub mod gemini;
 pub mod sumcheck;
 pub mod transcript;
+
 pub mod unisumcheck;
-pub mod fftunipoly;
-pub mod ph23;
+
+pub mod zeromorph;
+pub mod ph23_pcs;
+pub mod bcho_pcs;
+
 pub mod snark;
+
+pub mod babygkr;
+pub mod prodgkr;
 
 // Initialize the logger
 pub fn init_logger() {
@@ -51,30 +66,6 @@ pub fn pow_2(n: usize) -> usize {
     p as usize
 }
 
-// NOTE: 6 = (1, 1, 0), big-endian
-pub fn bits(i: usize, num_bits: usize) -> Vec<bool> {
-    (0..num_bits)
-      .map(|shift_amount| ((i & (1 << (num_bits - shift_amount - 1))) > 0))
-      .collect::<Vec<bool>>()
-}
-
-// NOTE: (1, 1, 0) = 6, big-endian
-pub fn bits_to_integer(bits: Vec<bool>) -> usize {
-    let bits: Vec<usize> = bits.iter().map(|b| if *b {1} else {0}).collect();
-    bits.into_iter().fold(0, |acc, b| acc * 2 + b)
-}
-
-pub fn bit_reverse(i: usize, k_log: usize) -> usize {
-    let mut i_bits = bits(i, k_log);
-    i_bits.reverse();
-    let i_reversed = bits_to_integer(i_bits);
-    i_reversed
-}
-
-pub fn scalar_from_bits(i: usize, num_bits: usize) -> Vec<Scalar> {
-    bits(i, num_bits).iter().map(| &b | if b {Scalar::one()} else {Scalar::zero()}).collect()
-}
-
 pub fn scalar_modulus_half() -> Scalar{
     let mut b = FrParameters::MODULUS;
     b.div2();
@@ -94,7 +85,6 @@ pub trait ScalarExt: Sized + Copy + Zero + One + Eq + std::fmt::Debug + Display 
 
     fn from_i64(i: i64) -> Self;
 
-    // fn one() -> Self;
     fn two() -> Self;
 
     fn from_i64_vector(v: &[i64]) -> Vec<Self>;
@@ -126,10 +116,6 @@ impl ScalarExt for Scalar {
     fn from_i64(i: i64) -> Self {
         Scalar::from(i as i64)
     }
-
-    // fn one() -> Self {
-    //     Scalar::from(1 as u64)
-    // }
 
     fn two() -> Self {
         Scalar::from(2 as u64)
@@ -171,8 +157,6 @@ impl ScalarExt for Scalar {
     }
 
     fn exp(&self, exp: usize) -> Self {
-        let mut res = Scalar::one();
-        let mut base = self.clone();
         assert_eq!(exp, (exp as u64) as usize);
         self.pow(&[exp as u64, 0, 0, 0])
     }
@@ -190,14 +174,11 @@ pub fn scalar_vector_to_string(v_vec: &Vec<Scalar>) -> String {
 }
 
 mod tests {
-    // use ark_ff::{PrimeField, FftParameters, FpParameters, BigInteger, BigInteger256};
     use super::*;
-    use ark_ff::{BigInteger, BigInteger256, FpParameters, PrimeField, FftParameters};
-    use ark_bn254::FrParameters;
     #[test]
     fn test_scalar_field() {
         let a = (Scalar::from(0 as u32) - Scalar::from(1 as u32)).into_repr();
-        let bigint_two = BigInteger256::from(2);
+        let _bigint_two = BigInteger256::from(2);
         let mut b = FrParameters::MODULUS;
         println!("b={}", b);
         b.div2();
@@ -210,34 +191,4 @@ mod tests {
         }
     }
 
-
-    #[test]
-    fn test_omega() {
-        let g = Scalar::multiplicative_generator();
-        let order = -Scalar::one();
-        println!("g={}", ScalarExt::to_string(&g));
-        let cofactor = order / Scalar::from((2 as u64).pow(3));
-        let omega = order.pow(cofactor.into_repr());
-        println!("omega={}", ScalarExt::to_string(&omega));
-        let omega_pow_8 = omega.pow(&[8,0,0,0]);
-        println!("omega_pow_8={}", ScalarExt::to_string(&omega_pow_8));
-    }
-
-    #[test]
-    fn test_polynomial_fft() {
-        let evals: Vec<Scalar> = Scalar::from_usize_vector(&[1, 2, 3, 4, 5, 6, 7, 8]);
-
-    }
-
-    #[test]
-    fn test_bits_to_integer() {
-        let bs = bits(6, 3);
-        assert_eq!(bits_to_integer(bs), 6);
-    }
-
-    #[test]
-    fn test_bit_reverse() {
-        let i_bits = bit_reverse(6, 3);
-        assert_eq!(i_bits, 3);
-    }
 }

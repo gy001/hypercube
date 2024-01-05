@@ -10,9 +10,8 @@
 
 ## TODOs
 
-- unipoly coeffs should be [f0, f1, ..., fn]
-- more comments 
-- protocol description
+- unipoly coeffs should be [f0, f1, ..., fn] ✅
+- more comments, protocol description 
 - clean up the space
 - towards zeromorph
 - batch kzg10 proofs
