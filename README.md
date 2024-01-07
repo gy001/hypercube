@@ -64,7 +64,7 @@ The main files showcasing our work are as follows (in the `univarization/src` fo
 We use ark_bn254, ark_std and ark_ff in our implementations.
 
 File                    |     blank    |   comment   |   code
-------------------------|--------------|-------------|------------
+------------------------|--------------|-------------|--------
 unipoly.rs              |       353    |       497   |   1023
 mle/mod.rs              |        31    |       186   |    125
 mle/coeffs_sparse.rs    |       132    |       157   |    709
@@ -80,14 +80,16 @@ lib.rs                  |        45    |         9   |    140
 unisumcheck.rs          |        37    |        12   |    130
 transcript.rs           |        23    |         2   |    107
 bits.rs                 |        26    |         3   |    102
-groupsim.rs             |       18     |        0    |    72
-**SUM**:                    |       1640   |       1908  |    5669
+groupsim.rs             |        18    |         0   |     72
+**SUM**:                |      1640    |      1908   |   5669
 
 
 ### Future Work
 
 - We look to benchmark the three approaches in the future. 
-- Adding zero knowledge construction will also be an interesting direction.
+- Adding shifting (to the next).
+- Adding zero knowledge construction.
+ 
 
 ### Credits
 

@@ -17,15 +17,17 @@ use std::iter;
 ///   the evaluation domain is H, i.e., the set of all integers from 0 to n-1
 
 
-// TODO: to use HashMap of sparse coeffients internally?
+// TODO: to use HashMap of sparse coefficients internally?
 //   It will be harder to shift coefficients in this case.
 
 
 /// A univariate polynomial over a prime field Fp in dense form.
-/// The polynomial is represented as a vector of coefficients
-/// in the increasing order of degree.
+/// The polynomial is denoted as a vector of coefficients
+/// ordered by ascending degree.
 /// The degree of the polynomial is (coeffs.len() - 1), and the
 /// leading coefficient is coeffs[coeffs.len() - 1].
+/// 
+/// TODO: zero polynomial's degree should be minus-infinity
 #[derive(Debug, PartialEq, Clone)]
 pub struct UniPolynomial {
     pub degree: usize,
@@ -121,11 +123,12 @@ impl UniPolynomial {
     /// 
     /// # Arguments
     /// 
-    /// - domain: a domain of any size n
+    /// - `domain`: a domain of any size n
     /// 
     /// # Return
     /// 
-    /// - a vector of weights of size n
+    /// - `weights`: a vector of weights of size n
+    /// 
     pub fn barycentric_weights(domain: &[Scalar]) -> Vec<Scalar> {
         let domain_size = domain.len();
         let mut weights: Vec<Scalar> = vec![Scalar::zero(); domain_size];
@@ -221,7 +224,7 @@ impl UniPolynomial {
     }
 
     // Compute evaluations from coefficients in O(n log n)
-    fn ntt_evals_from_coeffs(coeffs: &[Scalar], k_log_size: usize) -> Vec<Scalar> {
+    pub fn ntt_evals_from_coeffs(coeffs: &[Scalar], k_log_size: usize) -> Vec<Scalar> {
         let mut coeffs = coeffs.to_vec();
         let omega = Self::get_root_of_unity(k_log_size);
         Self::ntt_core(&mut coeffs, &omega, k_log_size);
@@ -229,7 +232,7 @@ impl UniPolynomial {
     }
 
     // Compute evaluations from coefficients in O(n log n)
-    fn ntt_coeffs_from_evals(evals: &[Scalar], k_log_size: usize) -> Vec<Scalar> {
+    pub fn ntt_coeffs_from_evals(evals: &[Scalar], k_log_size: usize) -> Vec<Scalar> {
 
         let mut evals = evals.to_vec();
         let omega = Self::get_root_of_unity(k_log_size);
@@ -340,6 +343,7 @@ impl UniPolynomial {
     /// TODO: I use this alg. to compute `z'(X)`. Is there 
     /// any faster algorithm? It is mentioned in [TAB20] that `z'(X)`
     /// can be computed in O(n) time.
+    /// 
     fn linear_combination_linear_moduli_fix(
         tree: &Vec<Vec<Vec<Scalar>>>, 
         k: usize, 
@@ -388,6 +392,7 @@ impl UniPolynomial {
     /// # Return
     /// 
     /// - a polynomial (coefficients) of degree (n-1)
+    /// 
     pub fn compute_coeffs_from_evals_fast_2(evals: &[Scalar], domain: &[Scalar]) -> Vec<Scalar> {
         let n = domain.len();
         assert!(n.is_power_of_two());
@@ -459,9 +464,15 @@ impl UniPolynomial {
     /// Polynomial evaluation in O(nlog^2(n)), or multiple points evaluation
     /// It assumes using O(nlog(n)) fast multiplication (TODO: to implement).
     /// 
-    /// @param coeffs: a polynomial (coefficients) of degree (n-1)
-    /// @param domain: a domain of size n, n must be a power of 2
-    /// @return: a vector of evaluations of size n
+    /// # Arguments
+    /// 
+    /// - `coeffs`: a polynomial (coefficients) of degree (n-1)
+    /// - `domain`: a domain of size n, n must be a power of 2
+    /// 
+    /// # Return
+    /// 
+    /// - `evals`:  a vector of evaluations of size n
+    /// 
     pub fn compute_evals_from_coeffs_fast(coeffs: &[Scalar], domain: &[Scalar]) -> Vec<Scalar> {
         let n = domain.len();
         assert!(n.is_power_of_two());
@@ -668,7 +679,16 @@ impl UniPolynomial {
         coeffs
     }
 
-    // compute evaluations in O(n^2)
+    /// Polynomial multiple points evaluation in O(n^2)
+    /// 
+    /// # Arguments
+    /// 
+    /// - `coeffs`: a polynomial (coefficients) of degree (n-1)
+    /// - `domain`: a domain of size n, n must be a power of 2
+    /// 
+    /// # Return
+    /// - `evals`:  a vector of evaluations of size n
+    /// 
     pub fn compute_evals_from_coeffs_slow(coeffs: &[Scalar], domain: &[Scalar]) -> Vec<Scalar> {
         let domain_size = domain.len();
         assert!(domain_size.is_power_of_two());

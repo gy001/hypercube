@@ -37,8 +37,7 @@ pub mod bcho_pcs;
 
 pub mod snark;
 
-pub mod babygkr;
-pub mod prodgkr;
+pub mod fk20;
 
 // Initialize the logger
 pub fn init_logger() {

@@ -28,13 +28,21 @@ impl G1 {
         G1::new(Scalar::one())
     }
 
-    pub fn add(&self, other: &G1, neg: bool) -> G1 {
-        if neg {
-            G1::new(self.x - other.x)
-        } else {
+    pub fn add(&self, other: &G1) -> G1 {
             G1::new(self.x + other.x)
-        }
     }
+
+    pub fn sub(&self, other: &G1) -> G1 {
+        G1::new(self.x - other.x)
+    }
+
+    // pub fn add(&self, other: &G1, neg: bool) -> G1 {
+    //     if neg {
+    //         G1::new(self.x - other.x)
+    //     } else {
+    //         G1::new(self.x + other.x)
+    //     }
+    // }
 
     pub fn mul_int(&self, i: i64) -> G1 {
         G1::new(self.x * Scalar::from_i64(i))
